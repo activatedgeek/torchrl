@@ -15,7 +15,9 @@ class DQN(nn.Module):
 
         self._input_size = input_size
         self.action_size = output_size
+        self._steps = 0
 
+        # Hyper-Parameters
         self.gamma = 0.8
         self.eps = 0.9
         self.eps_max = 0.9
@@ -24,19 +26,28 @@ class DQN(nn.Module):
         self.memory = ReplayMemory(size=1000)
         self.memory_batch_size = 32
 
+        # A simple one hidden layer network IN4-FC512-OUT2
         self.fc = nn.Sequential(OrderedDict([
             ('f1', nn.Linear(self._input_size, 512)),
             ('relu1', nn.ReLU()),
             ('f2', nn.Linear(512, self.action_size)),
         ]))
 
+        # Huber Loss
         self.criterion = SmoothL1Loss()
+
+        # Adam Optimizer for SGD
         self.optimizer = Adam(self.parameters(), lr=1e-4)
-        self._steps = 0
 
     def forward(self, obs):
         values = self.fc(obs)
         return values
+
+    def _optimize(self, loss):
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        self._steps += 1
 
     def act(self, state):
         if random.random() < self.eps:
@@ -69,9 +80,6 @@ class DQN(nn.Module):
 
         loss = self.criterion(current_q_values, expected_q_values)
 
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-        self._steps += 1
+        self._optimize(loss)
 
         self.eps = self.eps_min + (self.eps_max - self.eps_min) * math.exp(-float(self._steps) * self.eps_decay)
