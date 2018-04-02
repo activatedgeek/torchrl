@@ -2,14 +2,18 @@ import gym
 import time
 import torch
 import visdom
+from torch.nn import SmoothL1Loss
+from torch.optim import Adam
+
 from rl_baselines import Transition
 from rl_baselines.agents import DQN
+from rl_baselines.archs import SimpleQNet
 
 viz = visdom.Visdom()
 window = None
 
 
-def run_episode(env, agent, render=False):
+def run_episode(env, agent, criterion, optimizer, render=False, fps=24):
     t = 0
 
     state = env.reset()
@@ -17,7 +21,7 @@ def run_episode(env, agent, render=False):
     while not done:
         if render:
             env.render()
-            time.sleep(0.1)
+            time.sleep(1. / fps)
 
         action = agent.act(torch.FloatTensor(state))
         next_state, reward, done, info = env.step(action)
@@ -25,7 +29,9 @@ def run_episode(env, agent, render=False):
 
         agent.remember(Transition(state, action, reward, next_state, done))
 
-        agent.learn()
+        optimizer.zero_grad()
+        agent.grad(criterion)
+        optimizer.step()
 
         state = next_state
         t += 1
@@ -35,18 +41,21 @@ def run_episode(env, agent, render=False):
 
 def main():
     env = gym.make('CartPole-v1')
-    agent = DQN(env.observation_space.shape[0], env.action_space.n)
+    qnet = SimpleQNet(env.observation_space.shape[0], env.action_space.n)
+    agent = DQN(qnet, gamma=0.8, eps_max=1.0, eps_min=0.05, batch_size=32, temperature=3500.0)
+    criterion = SmoothL1Loss()
+    optimizer = Adam(qnet.parameters(), lr=1e-4)
 
     episodes = 350
     score_list = []
     eps_list = []
     for idx in range(1, episodes + 1):
-        score = run_episode(env, agent, render=False)
+        score = run_episode(env, agent, criterion, optimizer, render=False)
         score_list.append(score)
-        eps_list.append(agent.eps)
+        eps_list.append(agent._eps)
 
-        # @TODO This is a mess
-        if idx % 25 == 0 and viz.check_connection():
+        # @TODO Fix this mess
+        if viz.check_connection():
             global window
             window = viz.line(torch.FloatTensor(score_list), torch.FloatTensor(list(range(idx))),
                               win=window, name='training_episode_rewards', update='replace' if window else None,
