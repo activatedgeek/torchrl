@@ -3,9 +3,9 @@ import abc
 
 class BaseAgent(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def act(self, state):
+    def forward(self, state):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def grad(self, _criterion):
+    def act(self, state):
         raise NotImplementedError

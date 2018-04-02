@@ -15,12 +15,21 @@ window = None
 def main():
     env = gym.make('CartPole-v1')
     qnet = SimpleQNet(env.observation_space.shape[0], env.action_space.n)
-    agent = DQN(qnet, gamma=0.8, eps_max=1.0, eps_min=0.05, batch_size=32, temperature=3500.0)
+    agent = DQN(qnet)
     criterion = SmoothL1Loss()
     optimizer = Adam(qnet.parameters(), lr=1e-4)
 
-    num_episodes = 500
-    runner = QLearning(env, agent, criterion, optimizer)
+    num_episodes = 1000
+    runner = QLearning(env,
+                       agent,
+                       criterion,
+                       optimizer,
+                       gamma=0.8,
+                       eps_max=1.0,
+                       eps_min=0.01,
+                       temperature=1000.0,
+                       memory_size=1000,
+                       batch_size=32)
     history = runner.run(num_episodes, store_history=True, render=False)
 
     reward_list = list(map(lambda h: len(h), history))
