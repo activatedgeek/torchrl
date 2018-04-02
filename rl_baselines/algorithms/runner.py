@@ -13,27 +13,43 @@ class Runner(metaclass=abc.ABCMeta):
     def step(self, state):
         raise NotImplementedError
 
-    def run_episode(self, render=False, fps=30):
-        total_reward = 0
+    def run_episode(self, **kwargs):
+        max_steps = kwargs.get('max_steps', None)
+        render = kwargs.get('render', False)
+        fps = kwargs.get('fps', 30)
+
+        history = []
+        steps = 0
 
         state = self.env.reset()
-        done = False
-        while not done:
+        if render:
+            self.env.render()
+            time.sleep(1. / fps)
+
+        while True:
+            transition = self.step(state)
+            history.append(transition)
+
+            steps += 1
+
             if render:
                 self.env.render()
                 time.sleep(1. / fps)
 
-            next_state, reward, done, info = self.step(state)
+            if transition.done or (max_steps and steps >= max_steps):
+                break
 
-            state = next_state
-            total_reward += reward
+            state = transition.next_state
 
-        return total_reward
+        return history
 
-    def run(self, num_episodes, render=False, fps=30):
-        reward_list = []
+    def run(self, num_episodes, **kwargs):
+        store_history = kwargs.get('store_history', False)
+
+        history = [] if store_history else None
         for _ in range(num_episodes):
-            reward = self.run_episode(render, fps)
-            reward_list.append(reward)
+            episode = self.run_episode(**kwargs)
+            if store_history and episode:
+                history.append(episode)
 
-        return reward_list
+        return history

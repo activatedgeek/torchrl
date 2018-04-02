@@ -12,10 +12,11 @@ class QLearning(Runner):
         next_state, reward, done, info = self.env.step(action)
         reward = -1 if done else reward
 
-        self.agent.remember(Transition(state, action, reward, next_state, done))
+        transition = Transition(state, action, reward, next_state, done)
+        self.agent.remember(transition)
 
         self.optimizer.zero_grad()
         self.agent.grad(self.criterion)
         self.optimizer.step()
 
-        return next_state, reward, done, info
+        return transition

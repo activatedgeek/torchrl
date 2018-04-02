@@ -19,9 +19,11 @@ def main():
     criterion = SmoothL1Loss()
     optimizer = Adam(qnet.parameters(), lr=1e-4)
 
-    num_episodes = 1000
+    num_episodes = 500
     runner = QLearning(env, agent, criterion, optimizer)
-    reward_list = runner.run(num_episodes, render=False)
+    history = runner.run(num_episodes, store_history=True, render=False)
+
+    reward_list = list(map(lambda h: len(h), history))
 
     # @TODO A general method to collect training stats?
     if viz.check_connection():
