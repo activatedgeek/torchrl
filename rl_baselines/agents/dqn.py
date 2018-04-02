@@ -3,9 +3,10 @@ import torch
 import random
 from torch.autograd import Variable
 from ..memory import ReplayMemory, Transition
+from . import BaseAgent
 
 
-class DQN:
+class DQN(BaseAgent):
     def __init__(self,
                  network,
                  gamma=0.99,
