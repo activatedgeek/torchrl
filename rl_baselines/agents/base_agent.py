@@ -3,7 +3,7 @@ import abc
 
 class BaseAgent(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def act(self):
+    def act(self, state):
         raise NotImplementedError
 
     @abc.abstractmethod
