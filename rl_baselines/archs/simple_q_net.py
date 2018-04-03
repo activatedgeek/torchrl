@@ -14,6 +14,8 @@ class SimpleQNet(nn.Module):
             ('relu1', nn.ReLU()),
             ('f2', nn.Linear(512, self._output_size)),
         ]))
+        nn.init.xavier_uniform(self.net[0].weight)
+        nn.init.xavier_uniform(self.net[2].weight)
 
     def forward(self, obs):
         values = self.net(obs)

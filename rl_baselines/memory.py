@@ -13,11 +13,12 @@ class ReplayMemory:
         self.memory.extend(transitions)
 
     def add(self, transition):
-        assert isinstance(transition, Transition), 'Input should be an instance of Transition, found {}'.format(str(type(transition)))
+        assert isinstance(transition, Transition), \
+            'Input should be an instance of Transition, found {}'.format(str(type(transition)))
         self.memory.append(transition)
 
-    def sample(self, n):
-        return random.sample(self.memory, n)
+    def sample(self, batch_size):
+        return random.sample(self.memory, batch_size)
 
     def __len__(self):
         return len(self.memory)

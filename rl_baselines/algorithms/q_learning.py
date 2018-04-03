@@ -1,12 +1,12 @@
-import math
 import torch
 import random
+import numpy as np
 from torch.autograd import Variable
-from . import Runner
+from . import EpisodeRunner
 from ..memory import Transition, ReplayMemory
 
 
-class QLearning(Runner):
+class QLearning(EpisodeRunner):
     def __init__(self, env, agent, criterion, optimizer, **kwargs):
         super(QLearning, self).__init__(env, agent, criterion, optimizer)
 
@@ -33,11 +33,12 @@ class QLearning(Runner):
         transition = Transition(state, action, reward, next_state, done)
         self._memory.add(transition)
 
-        self.optimizer.zero_grad()
         self.learn()
-        self.optimizer.step()
 
         return transition
+
+    def process_episode(self, episode):
+        return
 
     def learn(self):
         if len(self._memory) < self.batch_size:
@@ -57,8 +58,11 @@ class QLearning(Runner):
         expected_q_values = batch_reward + self.gamma * max_next_q_values
 
         loss = self.criterion(current_q_values, expected_q_values)
+
         loss.backward()
+        self.optimizer.step()
+        self.optimizer.zero_grad()
 
         self._steps += 1
         self._eps = self.eps_min + \
-                    (self.eps_max - self.eps_min) * math.exp(-float(self._steps) * 1. / self.temperature)
+                    (self.eps_max - self.eps_min) * np.exp(-float(self._steps) * 1. / self.temperature)

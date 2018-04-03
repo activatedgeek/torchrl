@@ -1,27 +1,32 @@
+import abc
 import time
-import random
-from ..memory import Transition
 
 
-class Runner:
+class EpisodeRunner(metaclass=abc.ABCMeta):
     def __init__(self, env, agent, criterion, optimizer):
         self.env = env
         self.agent = agent
         self.criterion = criterion
         self.optimizer = optimizer
 
+    @abc.abstractmethod
     def step(self, state):
-        action = random.randrange(self.env.action_space.n)
-        next_state, reward, done, info = self.env.step(action)
-        transition = Transition(state, action, reward, next_state, done)
-        return transition
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def process_episode(self, episode):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def learn(self):
+        raise NotImplementedError
 
     def run_episode(self, **kwargs):
         max_steps = kwargs.get('max_steps', 1000000)
         render = kwargs.get('render', False)
         fps = kwargs.get('fps', 30)
 
-        history = []
+        episode = []
         steps = 0
 
         state = self.env.reset()
@@ -31,7 +36,7 @@ class Runner:
 
         for step in range(1, max_steps + 1):
             transition = self.step(state)
-            history.append(transition)
+            episode.append(transition)
 
             steps += 1
 
@@ -44,14 +49,15 @@ class Runner:
 
             state = transition.next_state
 
-        return history
+        return episode
 
     def run(self, num_episodes, **kwargs):
         store_history = kwargs.get('store_history', False)
 
         history = [] if store_history else None
-        for _ in range(num_episodes):
+        for eid in range(1, num_episodes + 1):
             episode = self.run_episode(**kwargs)
+            self.process_episode(episode)
             if store_history:
                 history.append(episode)
 
