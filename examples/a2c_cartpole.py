@@ -21,7 +21,7 @@ def main():
 
     num_episodes = 15000
     runner = A2C(env, agent, criterion, optimizer,
-                 gamma=0.99, eps_max=1.0, eps_min=0.05, temperature=200.0)
+                 gamma=0.99, eps_max=1.0, eps_min=0.05, temperature=15000.0)
     history = runner.run(num_episodes, store_history=True, render=False)
 
     reward_list = list(map(lambda h: len(h), history))

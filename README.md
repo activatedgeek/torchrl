@@ -9,3 +9,4 @@ Most of these will require architectural and hyper-parameter changes. However, r
 the setup is the same.
 
 * DQN
+* A2C
