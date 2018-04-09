@@ -1,12 +1,19 @@
-# Reinforcement Learning Baselines
+# TorchRL
 
-This is an implementation of popular Reinforcement Learning Algorithms in PyTorch.
-The aim is to keep it modular and serve as the go to reference implementation.
+[![Build Status](https://travis-ci.org/activatedgeek/torchrl.svg?branch=master)](https://travis-ci.org/activatedgeek/torchrl)
 
-## Algorithms Implemented
+## Objectives
 
-Most of these will require architectural and hyper-parameter changes. However, rest of
-the setup is the same.
+* Modularity in the RL pipeline
+
+* Clean implementations of basic ideas
+
+* Scalability
+
+## Algorithms
+
+Most of these will require architectural and hyper-parameter changes keeping rest
+of the system same.
 
 * DQN
 * A2C

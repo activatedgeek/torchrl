@@ -20,13 +20,22 @@ with open('requirements.txt', 'r') as f:
 with open('VERSION') as f:
     VERSION = f.read().strip()
 
+with open('README.md') as f:
+    README = f.read()
+
 setup(name='torchrl',
+      description='Reinforcement Learning for PyTorch',
+      long_description=README,
       version=VERSION,
       url='https://www.github.com/activatedgeek/torchrl',
       author='Sanyam Kapoor',
-      license='MIT',
+      license='Apache License 2.0',
       classifiers=[
-          'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.6',
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
+        'License :: OSI Approved :: Apache Software License'
       ],
       packages=find_packages(),
       install_requires=install_requires)
