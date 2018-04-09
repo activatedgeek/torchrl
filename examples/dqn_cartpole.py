@@ -8,11 +8,11 @@ from torchrl.agents import DQN
 from torchrl.archs import SimpleQNet
 from torchrl.algorithms import QLearning
 
-viz = visdom.Visdom()
-window = None
-
 
 def main():
+    viz = visdom.Visdom()
+    window = None
+
     env = gym.make('CartPole-v1')
     qnet = SimpleQNet(env.observation_space.shape[0], env.action_space.n)
     agent = DQN(qnet)
@@ -29,7 +29,6 @@ def main():
 
     # @TODO A general method to collect training stats?
     if viz.check_connection():
-        global window
         window = viz.line(torch.FloatTensor(reward_list), torch.FloatTensor(list(range(1, num_episodes + 1))),
                           win=window, name='training_episode_rewards', update='replace' if window else None,
                           opts={'title': 'Training Rewards', 'xlabel': 'Episode',
