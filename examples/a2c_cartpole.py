@@ -4,9 +4,9 @@ import visdom
 from torch.nn import MSELoss
 from torch.optim import RMSprop
 
-from rl_baselines.agents import DQN
-from rl_baselines.archs import SimpleQNet
-from rl_baselines.algorithms import A2C
+from torchrl.agents import DQN
+from torchrl.archs import SimpleQNet
+from torchrl.algorithms import A2C
 
 viz = visdom.Visdom()
 window = None
@@ -19,9 +19,9 @@ def main():
     criterion = MSELoss()
     optimizer = RMSprop(qnet.parameters(), lr=1e-3, weight_decay=0.99)
 
-    num_episodes = 15000
+    num_episodes = 1000
     runner = A2C(env, agent, criterion, optimizer,
-                 gamma=0.99, eps_max=1.0, eps_min=0.05, temperature=15000.0)
+                 gamma=0.9, eps_max=1.0, eps_min=0.1, temperature=2000.0)
     history = runner.run(num_episodes, store_history=True, render=False)
 
     reward_list = list(map(lambda h: len(h), history))

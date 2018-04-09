@@ -20,9 +20,9 @@ with open('requirements.txt', 'r') as f:
 with open('VERSION') as f:
     VERSION = f.read().strip()
 
-setup(name='rl_baselines',
+setup(name='torchrl',
       version=VERSION,
-      url='https://www.github.com/activatedgeek/rl_baselines',
+      url='https://www.github.com/activatedgeek/torchrl',
       author='Sanyam Kapoor',
       license='MIT',
       classifiers=[

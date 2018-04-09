@@ -31,7 +31,7 @@ class A2C(EpisodeRunner):
     def step(self, state):
         action = self.epsilon_greedy(state)
         next_state, reward, done, info = self.env.step(action)
-        reward = -1 if done else reward
+        reward = -10 if done else reward
 
         transition = Transition(state, action, reward, next_state, done)
 

@@ -4,9 +4,9 @@ import visdom
 from torch.nn import SmoothL1Loss
 from torch.optim import Adam
 
-from rl_baselines.agents import DQN
-from rl_baselines.archs import SimpleQNet
-from rl_baselines.algorithms import QLearning
+from torchrl.agents import DQN
+from torchrl.archs import SimpleQNet
+from torchrl.algorithms import QLearning
 
 viz = visdom.Visdom()
 window = None
