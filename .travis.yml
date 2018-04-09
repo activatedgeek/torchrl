@@ -1,0 +1,13 @@
+language: python
+python:
+  - "3.6"
+
+script:
+  - pip install .
+
+deploy:
+  provider: pypi
+  user: $PYPI_USERNAME
+  password: $PYPI_PASSWORD
+  on:
+    tags: true
