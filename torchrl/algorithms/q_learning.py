@@ -2,13 +2,13 @@ import torch
 import random
 import numpy as np
 from torch.autograd import Variable
-from . import EpisodeRunner
-from ..memory import Transition, ReplayMemory
+from . import BaseLearner
+from .. import ReplayMemory
 
 
-class QLearning(EpisodeRunner):
-    def __init__(self, env, agent, criterion, optimizer, **kwargs):
-        super(QLearning, self).__init__(env, agent, criterion, optimizer)
+class QLearning(BaseLearner):
+    def __init__(self, agent, criterion, optimizer, **kwargs):
+        super(QLearning, self).__init__(agent, criterion, optimizer)
 
         # Hyper-Parameters
         self.gamma = kwargs.get('gamma', 0.99)
@@ -23,24 +23,16 @@ class QLearning(EpisodeRunner):
         self._steps = 0
         self._eps = self.eps_max
 
-    def step(self, state):
-        action = random.randrange(self.env.action_space.n) if random.random() < self._eps \
+    def step(self, state, n, *args, **kwargs):
+        action = random.randrange(n) if random.random() < self._eps \
             else self.agent.act(state)
 
-        next_state, reward, done, info = self.env.step(action)
-        reward = -1 if done else reward
+        return action
 
-        transition = Transition(state, action, reward, next_state, done)
-        self._memory.add(transition)
+    def remember(self, state, action, reward, next_state, done):
+        self._memory.push(state, action, reward, next_state, done)
 
-        self.learn()
-
-        return transition
-
-    def process_episode(self, episode):
-        return
-
-    def learn(self):
+    def learn(self, *args, **kwargs):
         if len(self._memory) < self.batch_size:
             return
 
