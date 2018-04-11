@@ -6,7 +6,7 @@ before_script:
   - pip install -r requirements_dev.txt
 
 script:
-  - pylint torchrl/ examples/
+  - pylint torchrl examples
   - pip install .
 
 deploy:

@@ -13,14 +13,14 @@ class Episode:
         self._history.append(Transition(state, action, reward, next_state, done))
 
     def __iter__(self):
-        for h in self._history:
-            yield h
+        for transition in self._history:
+            yield transition
 
     def __len__(self):
         return len(self._history)
 
-    def __getitem__(self, t):
-        return self._history[t]
+    def __getitem__(self, index):
+        return self._history[index]
 
 
 class EpisodeBuffer:
@@ -53,11 +53,11 @@ class ReplayMemory:
         return random.sample(self.memory, batch_size)
 
     def __iter__(self):
-        for m in self.memory:
-            yield m
+        for transition in self.memory:
+            yield transition
 
     def __len__(self):
         return len(self.memory)
 
-    def __getitem__(self, t):
-        return self.memory[t]
+    def __getitem__(self, index):
+        return self.memory[index]

@@ -23,7 +23,7 @@ def run_episode(env, learner, **kwargs):
         env.render()
         time.sleep(1. / fps)
 
-    for t in range(1, max_steps + 1):
+    for step in range(1, max_steps + 1):
         action = learner.step(state, env.action_space.n)
         next_state, reward, done, info = env.step(action)
         reward = -10 if done else reward  # Penalize for termination
