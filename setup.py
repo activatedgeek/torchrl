@@ -26,6 +26,7 @@ with open('README.md') as f:
 setup(name='torchrl',
       description='Reinforcement Learning for PyTorch',
       long_description=README,
+      long_description_content_type='text/markdown',
       version=VERSION,
       url='https://www.github.com/activatedgeek/torchrl',
       author='Sanyam Kapoor',

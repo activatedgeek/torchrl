@@ -1,7 +1,7 @@
 # TorchRL
 
 [![Build Status](https://travis-ci.org/activatedgeek/torchrl.svg?branch=master)](https://travis-ci.org/activatedgeek/torchrl)
-[![PyPI version](https://badge.fury.io/py/torchrl.svg)](https://badge.fury.io/py/torchrl)
+[![PyPI version](https://badge.fury.io/py/torchrl.svg)](https://pypi.org/project/torchrl/)
 ![Project Status](https://img.shields.io/badge/status-alpha-orange.svg)
 
 

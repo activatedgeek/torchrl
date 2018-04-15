@@ -46,13 +46,13 @@ def main():
         # learner.learn()
         # ```
         #
-        t = 0
+        reward = 0
         while not runner.run(learner, steps=1):
-            t += 1
+            reward += 1
         learner.learn()
 
         if i % 10 == 0:
-            print('Episode {}: {} steps'.format(i, t))
+            print('Episode {}: {} steps'.format(i, reward))
 
     env.close()
 
