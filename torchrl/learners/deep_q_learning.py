@@ -6,9 +6,9 @@ from . import BaseLearner
 from .. import ReplayMemory
 
 
-class QLearning(BaseLearner):
+class DeepQLearner(BaseLearner):
     def __init__(self, agent, criterion, optimizer, **kwargs):
-        super(QLearning, self).__init__(agent, criterion, optimizer)
+        super(DeepQLearner, self).__init__(agent, criterion, optimizer)
 
         # Hyper-Parameters
         self.gamma = kwargs.get('gamma', 0.99)

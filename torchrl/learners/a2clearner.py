@@ -4,9 +4,9 @@ from . import BaseLearner
 from ..policies import epsilon_greedy
 
 
-class A2C(BaseLearner):
+class A2CLearner(BaseLearner):
     def __init__(self, agent, criterion, optimizer, **kwargs):
-        super(A2C, self).__init__(agent, criterion, optimizer)
+        super(A2CLearner, self).__init__(agent, criterion, optimizer)
 
         # Hyper-Parameters
         self.gamma = kwargs.get('gamma', 0.99)
