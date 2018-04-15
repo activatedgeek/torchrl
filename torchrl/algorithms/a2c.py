@@ -24,19 +24,19 @@ class A2C(BaseLearner):
         return action
 
     def learn(self, episode, **kwargs):
-        expected_reward = Variable(torch.FloatTensor([0.0]), requires_grad=True)
+        expected_return = Variable(torch.FloatTensor([0.0]), requires_grad=True)
         if not episode[-1].done:
             state_tensor = torch.FloatTensor(episode[-1].state)
             q_values = self.agent.forward(Variable(state_tensor))
-            expected_reward, _ = q_values.max()
-            expected_reward = Variable(expected_reward, requires_grad=True)
+            expected_return, _ = q_values.max()
+            expected_return = Variable(expected_return, requires_grad=True)
 
         for transition in episode[::-1][1:]:
-            expected_reward = transition.reward + self.gamma * expected_reward
+            expected_return = transition.reward + self.gamma * expected_return
             state_tensor = torch.FloatTensor(episode[-1].state)
             q_values = self.agent.forward(Variable(state_tensor, volatile=True))
 
-            loss = self.criterion(expected_reward, q_values[transition.action])
+            loss = self.criterion(expected_return, q_values[transition.action])
             loss.backward()
 
         self.optimizer.step()
