@@ -2,28 +2,42 @@ import torch
 from torch.autograd import Variable
 from . import BaseLearner
 from ..policies import epsilon_greedy
+from .. import Episode
 
 
 class A2CLearner(BaseLearner):
-    def __init__(self, agent, criterion, optimizer, **kwargs):
+    def __init__(self, agent, criterion, optimizer, action_space,
+                 gamma=0.99,
+                 eps_max=1.0,
+                 eps_min=0.01,
+                 temperature=3500.0,
+                 tmax=5):
         super(A2CLearner, self).__init__(agent, criterion, optimizer)
 
+        self.action_space = action_space
+
         # Hyper-Parameters
-        self.gamma = kwargs.get('gamma', 0.99)
-        self.eps_max = kwargs.get('eps_max', 1.0)
-        self.eps_min = kwargs.get('eps_min', 0.01)
-        self.temperature = kwargs.get('temperature', 3500.0)
-        self.tmax = kwargs.get('tmax', 5)
+        self.gamma = gamma
+        self.eps_max = eps_max
+        self.eps_min = eps_min
+        self.temperature = temperature
+        self.tmax = tmax
 
         # Internal State
         self._eps = self.eps_max
+        self._cur_episode = Episode()
 
-    def step(self, state, n, *args, **kwargs):
+    def act(self, state, *args, **kwargs):
         best_action = self.agent.act(state)
-        action, _ = epsilon_greedy(n, best_action, eps=self._eps)
+        action, _ = epsilon_greedy(self.action_space, best_action, eps=self._eps)
         return action
 
-    def learn(self, episode, **kwargs):
+    def transition(self, episode_id, state, action, reward, next_state, done):
+        self._cur_episode.append(state, action, reward, next_state, done)
+
+    def learn(self, **kwargs):
+        episode = self._cur_episode
+
         expected_return = Variable(torch.FloatTensor([0.0]), requires_grad=True)
         if not episode[-1].done:
             state_tensor = torch.FloatTensor(episode[-1].state)
@@ -41,3 +55,4 @@ class A2CLearner(BaseLearner):
 
         self.optimizer.step()
         self.optimizer.zero_grad()
+        self._cur_episode.clear()

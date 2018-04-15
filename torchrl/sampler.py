@@ -12,6 +12,9 @@ class Episode:
     def append(self, state, action, reward, next_state, done):
         self._history.append(Transition(state, action, reward, next_state, done))
 
+    def clear(self):
+        self._history.clear()
+
     def __iter__(self):
         for transition in self._history:
             yield transition

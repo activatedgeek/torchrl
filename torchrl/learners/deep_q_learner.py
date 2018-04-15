@@ -7,29 +7,37 @@ from .. import ReplayMemory
 
 
 class DeepQLearner(BaseLearner):
-    def __init__(self, agent, criterion, optimizer, **kwargs):
+    def __init__(self, agent, criterion, optimizer, action_space,
+                 gamma=0.99,
+                 eps_max=1.0,
+                 eps_min=0.01,
+                 temperature=3500.0,
+                 memory_size=5000,
+                 batch_size=32):
         super(DeepQLearner, self).__init__(agent, criterion, optimizer)
 
+        self.action_space = action_space
+
         # Hyper-Parameters
-        self.gamma = kwargs.get('gamma', 0.99)
-        self.eps_max = kwargs.get('eps_max', 1.0)
-        self.eps_min = kwargs.get('eps_min', 0.01)
-        self.temperature = kwargs.get('temperature', 3500.0)
-        self.memory_size = kwargs.get('memory_size', 1000)
-        self.batch_size = kwargs.get('batch_size', 32)
+        self.gamma = gamma
+        self.eps_max = eps_max
+        self.eps_min = eps_min
+        self.temperature = temperature
+        self.memory_size = memory_size
+        self.batch_size = batch_size
 
         # Internal State
         self._memory = ReplayMemory(size=self.memory_size)
         self._steps = 0
         self._eps = self.eps_max
 
-    def step(self, state, n, *args, **kwargs):
-        action = random.randrange(n) if random.random() < self._eps \
+    def act(self, state):
+        action = random.randrange(self.action_space) if random.random() < self._eps \
             else self.agent.act(state)
 
         return action
 
-    def remember(self, state, action, reward, next_state, done):
+    def transition(self, episode_id, state, action, reward, next_state, done):
         self._memory.push(state, action, reward, next_state, done)
 
     def learn(self, *args, **kwargs):
