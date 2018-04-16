@@ -1,12 +1,12 @@
 import torch
 from torch.autograd import Variable
+from torch.distributions import Categorical
 from . import BaseLearner
-from ..policies import epsilon_greedy
 from ..utils import Episode
 
 
 class A2CLearner(BaseLearner):
-    def __init__(self, q_net, criterion, optimizer, action_space,
+    def __init__(self, policy_net, criterion, optimizer, action_space,
                  gamma=0.99,
                  eps_max=1.0,
                  eps_min=0.01,
@@ -14,7 +14,7 @@ class A2CLearner(BaseLearner):
                  tmax=5):
         super(A2CLearner, self).__init__(criterion, optimizer)
 
-        self.q_net = q_net
+        self.policy_net = policy_net
         self.action_space = action_space
 
         # Hyper-Parameters
@@ -29,14 +29,13 @@ class A2CLearner(BaseLearner):
         self._cur_episode = Episode()
 
     def act(self, state, *args, **kwargs):
-        action_values = self.q_net(Variable(torch.FloatTensor([state]), volatile=True))
-        value, action = action_values.max(1)
-        best_action = action.data[0]
-        action, _ = epsilon_greedy(self.action_space, best_action, eps=self._eps)
-        return action
+        action_values, policy = self.policy_net(Variable(torch.FloatTensor([state]), volatile=True))
+        dist = Categorical(policy)
+        action = dist.sample()
+        return action[0], dist.log_prob(action)
 
-    def transition(self, episode_id, state, action, reward, next_state, done):
-        self._cur_episode.append(state, action, reward, next_state, done)
+    def transition(self, episode_id, state, action, reward, next_state, done, action_log_prob):
+        self._cur_episode.append(state, action, reward, next_state, done, action_log_prob)
 
     def learn(self, **kwargs):
         episode = self._cur_episode
@@ -44,17 +43,19 @@ class A2CLearner(BaseLearner):
         expected_return = Variable(torch.FloatTensor([0.0]), requires_grad=True)
         if not episode[-1].done:
             state_tensor = torch.FloatTensor(episode[-1].state)
-            q_values = self.q_net.forward(Variable(state_tensor))
-            expected_return, _ = q_values.max()
-            expected_return = Variable(expected_return, requires_grad=True)
+            value, policy = self.policy_net(Variable(state_tensor))
+            expected_return = Variable(value, requires_grad=True)
 
         for transition in episode[::-1][1:]:
             expected_return = transition.reward + self.gamma * expected_return
             state_tensor = torch.FloatTensor(episode[-1].state)
-            q_values = self.q_net.forward(Variable(state_tensor, volatile=True))
+            value, policy = self.policy_net(Variable(state_tensor))
 
-            loss = self.criterion(expected_return, q_values[transition.action])
-            loss.backward()
+            value_loss = self.criterion(expected_return, value.detach())
+            policy_loss = Variable(transition.action_log_prob, requires_grad=True) * (expected_return - value)
+
+            value_loss.backward()
+            policy_loss.backward()
 
         self.optimizer.step()
         self.optimizer.zero_grad()

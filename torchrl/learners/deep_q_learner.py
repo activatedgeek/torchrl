@@ -40,15 +40,15 @@ class DeepQLearner(BaseLearner):
         value, action = action_values.max(1)
         return action.data[0]
 
-    def transition(self, episode_id, state, action, reward, next_state, done):
-        self._memory.push(state, action, reward, next_state, done)
+    def transition(self, episode_id, state, action, reward, next_state, done, action_log_prob):
+        self._memory.push(state, action, reward, next_state, done, action_log_prob)
 
     def learn(self, *args, **kwargs):
         if len(self._memory) < self.batch_size:
             return
 
         batch = self._memory.sample(self.batch_size)
-        batch_state, batch_action, batch_reward, batch_next_state, batch_done = list(zip(*batch))
+        batch_state, batch_action, batch_reward, batch_next_state, batch_done, _ = list(zip(*batch))
 
         batch_state = Variable(torch.cat(map(lambda s: torch.FloatTensor([s]), batch_state)))
         batch_action = Variable(torch.cat(list(map(lambda a: torch.LongTensor([[a]]), batch_action))))

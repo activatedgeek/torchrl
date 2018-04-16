@@ -14,10 +14,10 @@ class CartPoleLearner(DeepQLearner):
     A DeepQLearner with some reward shaping - penalize when the
     cart pole falls (i.e. episode ends)
     """
-    def transition(self, episode_id, state, action, reward, next_state, done):
+    def transition(self, episode_id, state, action, reward, next_state, done, action_log_prob):
         if done:
             reward = -1
-        super(CartPoleLearner, self).transition(episode_id, state, action, reward, next_state, done)
+        super(CartPoleLearner, self).transition(episode_id, state, action, reward, next_state, done, action_log_prob)
 
 
 def main():

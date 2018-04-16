@@ -2,12 +2,12 @@ import torch.nn as nn
 from collections import OrderedDict
 
 
-class SimpleQNet(nn.Module):
+class SimplePolicyNet(nn.Module):
     """
-    @WARN: This q-network is only for demonstration of I/O
+    @WARN: This policy network is only for demonstration of I/O
     """
     def __init__(self, input_size, output_size):
-        super(SimpleQNet, self).__init__()
+        super(SimplePolicyNet, self).__init__()
 
         self._input_size = input_size
         self._output_size = output_size
@@ -17,9 +17,12 @@ class SimpleQNet(nn.Module):
             ('relu1', nn.ReLU()),
             ('f2', nn.Linear(512, self._output_size)),
         ]))
-        nn.init.xavier_uniform(self.net[0].weight)
-        nn.init.xavier_uniform(self.net[2].weight)
+
+        self.value = nn.Linear(self._output_size, 1)
+        self.policy = nn.Softmax()
 
     def forward(self, obs):
         values = self.net(obs)
-        return values
+        value = self.value(values)
+        policy = self.policy(values)
+        return value, policy.data

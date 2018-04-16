@@ -2,15 +2,15 @@ from collections import deque, namedtuple
 import random
 
 Transition = namedtuple('Transition',
-                        ('state', 'action', 'reward', 'next_state', 'done'))
+                        ('state', 'action', 'reward', 'next_state', 'done', 'action_log_prob'))
 
 
 class Episode:
     def __init__(self):
         self._history = []
 
-    def append(self, state, action, reward, next_state, done):
-        self._history.append(Transition(state, action, reward, next_state, done))
+    def append(self, state, action, reward, next_state, done, action_log_prob):
+        self._history.append(Transition(state, action, reward, next_state, done, action_log_prob))
 
     def clear(self):
         self._history.clear()
@@ -49,8 +49,8 @@ class ReplayMemory:
     def __init__(self, size=100000):
         self.memory = deque(maxlen=size)
 
-    def push(self, state, action, reward, next_state, done):
-        self.memory.append(Transition(state, action, reward, next_state, done))
+    def push(self, state, action, reward, next_state, done, action_log_prob):
+        self.memory.append(Transition(state, action, reward, next_state, done, action_log_prob))
 
     def sample(self, batch_size):
         return random.sample(self.memory, batch_size)
