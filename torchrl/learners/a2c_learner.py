@@ -1,4 +1,6 @@
+import numpy as np
 import torch
+import random
 from torch.autograd import Variable
 from torch.distributions import Categorical
 from . import BaseLearner
@@ -27,15 +29,17 @@ class A2CLearner(BaseLearner):
         # Internal State
         self._eps = self.eps_max
         self._cur_episode = Episode()
+        self._t = 0
 
     def act(self, state, *args, **kwargs):
         action_values, policy = self.policy_net(Variable(torch.FloatTensor([state]), volatile=True))
         dist = Categorical(policy)
-        action = dist.sample()
+        action = torch.LongTensor([random.randrange(self.action_space)]) if random.random() < self._eps else dist.sample()
         return action[0], dist.log_prob(action)
 
     def transition(self, episode_id, state, action, reward, next_state, done, action_log_prob):
         self._cur_episode.append(state, action, reward, next_state, done, action_log_prob)
+        self._t += 1
 
     def learn(self, **kwargs):
         episode = self._cur_episode
@@ -52,11 +56,14 @@ class A2CLearner(BaseLearner):
             value, policy = self.policy_net(Variable(state_tensor))
 
             value_loss = self.criterion(expected_return, value.detach())
-            policy_loss = Variable(transition.action_log_prob, requires_grad=True) * (expected_return - value)
+            policy_loss = Variable(transition.action_log_prob) * (expected_return - value)
 
-            value_loss.backward()
-            policy_loss.backward()
+            (value_loss + policy_loss).backward()
 
         self.optimizer.step()
         self.optimizer.zero_grad()
         self._cur_episode.clear()
+
+        self._eps = self.eps_min + \
+                    (self.eps_max - self.eps_min) * np.exp(-float(self._t) * 1. / self.temperature)
+
