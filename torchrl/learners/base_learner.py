@@ -1,5 +1,4 @@
 import abc
-from ..agents import BaseAgent
 
 
 class BaseLearner(metaclass=abc.ABCMeta):
@@ -7,11 +6,7 @@ class BaseLearner(metaclass=abc.ABCMeta):
     This is base runner specification which can encapsulate everything
     how a Reinforcement Learning Algorithm would function.
     """
-    def __init__(self, agent, criterion, optimizer):
-        assert isinstance(agent, BaseAgent),\
-            '"agent" should inherit from "BaseAgent", found invalid type "{}"'.format(type(agent))
-
-        self.agent = agent
+    def __init__(self, criterion, optimizer):
         self.criterion = criterion
         self.optimizer = optimizer
 

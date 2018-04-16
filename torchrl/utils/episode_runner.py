@@ -1,5 +1,5 @@
 import time
-from .learners import BaseLearner
+from ..learners import BaseLearner
 
 
 class EpisodeRunner:
