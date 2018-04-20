@@ -1,7 +1,7 @@
-from collections import deque, namedtuple
-import random
+from collections import namedtuple
 import torch
 
+# @TODO This approach is not extensible, CPU bottleneck, remove altogether
 Transition = namedtuple('Transition',
                         ('state', 'action', 'reward', 'next_state', 'done', 'action_log_prob'))
 
@@ -56,10 +56,10 @@ class ReplayBuffer:
         self.buffer_size = size
 
         self.state_buffer = torch.zeros(0, *state_shape)
-        self.action_buffer = torch.zeros(0, *action_shape)
+        self.action_buffer = torch.zeros(0, *action_shape).long()
         self.reward_buffer = torch.zeros(0, 1)
         self.next_state_buffer = torch.zeros(0, *state_shape)
-        self.done_buffer = torch.zeros(0, 1)
+        self.done_buffer = torch.zeros(0, 1).long()
 
         self._size = 0
 
@@ -99,7 +99,7 @@ class ReplayBuffer:
         assert batch_size <= self._size, \
             'Unable to sample {} items, current buffer size {}'.format(batch_size, self._size)
 
-        batch_index = (torch.rand(batch_size) * (self._size + 1)).long()
+        batch_index = (torch.rand(batch_size) * self._size).long()
 
         state_batch = self.state_buffer.index_select(0, batch_index)
         action_batch = self.action_buffer.index_select(0, batch_index)
@@ -109,24 +109,5 @@ class ReplayBuffer:
 
         return state_batch, action_batch, reward_batch, next_state_batch, done_batch
 
-
-# @TODO remove this and replace with Replay Buffer
-class ReplayMemory:
-    def __init__(self, size=100000):
-        self.memory = deque(maxlen=size)
-
-    def push(self, state, action, reward, next_state, done, action_log_prob):
-        self.memory.append(Transition(state, action, reward, next_state, done, action_log_prob))
-
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
-
-    def __iter__(self):
-        for transition in self.memory:
-            yield transition
-
     def __len__(self):
-        return len(self.memory)
-
-    def __getitem__(self, index):
-        return self.memory[index]
+        return self._size

@@ -55,12 +55,9 @@ class EpisodeRunner:
 
         while not self._done and steps:
             action = learner.act(self._state)
-            log_prob = None
-            if type(action) == tuple:
-                action, log_prob = action
             next_state, reward, self._done, info = self.env.step(action)
 
-            learner.transition(episode_id, self._state, action, reward, next_state, self._done, log_prob)
+            learner.transition(episode_id, self._state, action, reward, next_state, self._done)
 
             self._state = next_state
             steps -= 1

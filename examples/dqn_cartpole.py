@@ -14,10 +14,10 @@ class CartPoleLearner(DeepQLearner):
     A DeepQLearner with some reward shaping - penalize when the
     cart pole falls (i.e. episode ends)
     """
-    def transition(self, episode_id, state, action, reward, next_state, done, action_log_prob):
+    def transition(self, episode_id, state, action, reward, next_state, done):
         if done:
             reward = -1
-        super(CartPoleLearner, self).transition(episode_id, state, action, reward, next_state, done, action_log_prob)
+        super(CartPoleLearner, self).transition(episode_id, state, action, reward, next_state, done)
 
 
 def main():
@@ -29,7 +29,8 @@ def main():
     smooth_loss = SmoothL1Loss()
     adam = Adam(q_net.parameters(), lr=1e-4)
 
-    learner = CartPoleLearner(q_net, smooth_loss, adam, env.action_space.n,
+    learner = CartPoleLearner(q_net, smooth_loss, adam,
+                              env.observation_space.shape, (env.action_space.n,),
                               gamma=0.8, eps_max=1.0, eps_min=0.1, temperature=2000.0,
                               memory_size=5000, batch_size=64)
 

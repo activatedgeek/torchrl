@@ -3,11 +3,11 @@ import random
 import numpy as np
 from torch.autograd import Variable
 from . import BaseLearner
-from .. import ReplayMemory
+from .. import ReplayBuffer
 
 
 class DeepQLearner(BaseLearner):
-    def __init__(self, q_net, criterion, optimizer, action_space,
+    def __init__(self, q_net, criterion, optimizer, observation_space, action_shape,
                  gamma=0.99,
                  eps_max=1.0,
                  eps_min=0.01,
@@ -17,7 +17,8 @@ class DeepQLearner(BaseLearner):
         super(DeepQLearner, self).__init__(criterion, optimizer)
 
         self.q_net = q_net
-        self.action_space = action_space
+        self.action_shape = action_shape
+        self.observation_shape = observation_space
 
         # Hyper-Parameters
         self.gamma = gamma
@@ -28,33 +29,38 @@ class DeepQLearner(BaseLearner):
         self.batch_size = batch_size
 
         # Internal State
-        self._memory = ReplayMemory(size=self.memory_size)
+        self._memory = ReplayBuffer(observation_space, action_shape, size=self.memory_size)
         self._steps = 0
         self._eps = self.eps_max
 
     def act(self, state):
         if random.random() < self._eps:
-            return random.randrange(self.action_space)
+            return random.randrange(self.action_shape[0])
 
         action_values = self.q_net(Variable(torch.FloatTensor([state]), volatile=True))
         value, action = action_values.max(1)
         return action.data[0]
 
-    def transition(self, episode_id, state, action, reward, next_state, done, action_log_prob):
-        self._memory.push(state, action, reward, next_state, done, action_log_prob)
+    def transition(self, episode_id, state, action, reward, next_state, done):
+        self._memory.push(
+            torch.FloatTensor(state).unsqueeze(0),
+            torch.LongTensor([action]).unsqueeze(0),
+            torch.FloatTensor([reward]).unsqueeze(0),
+            torch.FloatTensor(next_state).unsqueeze(0),
+            torch.LongTensor([done]).unsqueeze(0)
+        )
 
     def learn(self, *args, **kwargs):
-        if len(self._memory) < self.batch_size:
+        if len(self._memory) <= self.batch_size:
             return
 
-        batch = self._memory.sample(self.batch_size)
-        batch_state, batch_action, batch_reward, batch_next_state, batch_done, _ = list(zip(*batch))
+        batch_state, batch_action, batch_reward, batch_next_state, batch_done = \
+            self._memory.sample(self.batch_size)
 
-        batch_state = Variable(torch.cat(map(lambda s: torch.FloatTensor([s]), batch_state)))
-        batch_action = Variable(torch.cat(list(map(lambda a: torch.LongTensor([[a]]), batch_action))))
-        batch_reward = Variable(torch.cat(map(lambda r: torch.FloatTensor([[r]]), batch_reward)))
-        batch_next_state = Variable(
-            torch.cat(map(lambda s: torch.FloatTensor([s]), batch_next_state)), volatile=True)
+        batch_state = Variable(batch_state)
+        batch_action = Variable(batch_action)
+        batch_reward = Variable(batch_reward)
+        batch_next_state = Variable(batch_next_state, volatile=True)
 
         current_q_values = self.q_net(batch_state).gather(1, batch_action)
         max_next_q_values = self.q_net(batch_next_state).max(1)[0].unsqueeze(1)

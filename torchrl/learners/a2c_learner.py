@@ -37,8 +37,8 @@ class A2CLearner(BaseLearner):
         action = torch.LongTensor([random.randrange(self.action_space)]) if random.random() < self._eps else dist.sample()
         return action[0], dist.log_prob(action)
 
-    def transition(self, episode_id, state, action, reward, next_state, done, action_log_prob):
-        self._cur_episode.append(state, action, reward, next_state, done, action_log_prob)
+    def transition(self, episode_id, state, action, reward, next_state, done):
+        self._cur_episode.append(state, action, reward, next_state, done)
         self._t += 1
 
     def learn(self, **kwargs):

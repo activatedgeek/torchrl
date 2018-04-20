@@ -20,7 +20,7 @@ class BaseLearner(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def transition(self, episode_id, state, action, reward, next_state, done, log_prob):
+    def transition(self, episode_id, state, action, reward, next_state, done):
         """
         This routine can be used to handle the transition information returned by the
         environment and is provided as a utility routine and will be called by
@@ -32,7 +32,6 @@ class BaseLearner(metaclass=abc.ABCMeta):
         :param reward:
         :param next_state:
         :param done:
-        :param log_prob:
         :return:
         """
         raise NotImplementedError
