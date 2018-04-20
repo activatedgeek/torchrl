@@ -5,7 +5,7 @@ import gym
 from torch.nn import MSELoss
 from torch.optim import RMSprop
 
-from torchrl.archs import SimplePolicyNet
+from torchrl.models import SimplePolicyNet
 from torchrl.learners import A2CLearner
 from torchrl import EpisodeRunner
 

@@ -2,7 +2,7 @@ import gym
 from torch.nn import SmoothL1Loss
 from torch.optim import Adam
 
-from torchrl.archs import SimpleQNet
+from torchrl.models import SimpleQNet
 from torchrl.learners import DeepQLearner
 from torchrl import EpisodeRunner
 
