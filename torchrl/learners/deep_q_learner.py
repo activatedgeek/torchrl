@@ -3,7 +3,7 @@ import random
 import numpy as np
 from torch.autograd import Variable
 from . import BaseLearner
-from ..utils import ReplayMemory
+from .. import ReplayMemory
 
 
 class DeepQLearner(BaseLearner):

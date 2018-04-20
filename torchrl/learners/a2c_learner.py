@@ -4,7 +4,7 @@ import random
 from torch.autograd import Variable
 from torch.distributions import Categorical
 from . import BaseLearner
-from ..utils import Episode
+from .. import Episode
 
 
 class A2CLearner(BaseLearner):
