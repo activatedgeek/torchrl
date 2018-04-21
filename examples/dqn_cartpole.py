@@ -6,7 +6,7 @@ from torchrl.models import SimpleQNet
 from torchrl.learners import DeepQLearner
 from torchrl import EpisodeRunner
 
-NUM_EPISODES = 350
+NUM_EPISODES = 300
 
 
 class CartPoleLearner(DeepQLearner):
@@ -29,7 +29,7 @@ def create_learner(env):
     learner = CartPoleLearner(q_net, smooth_loss, adam,
                               env.observation_space.shape, (env.action_space.n,),
                               gamma=0.8, eps_max=1.0, eps_min=0.1, temperature=2000.0,
-                              memory_size=5000, batch_size=64)
+                              memory_size=5000, batch_size=64, target_update_freq=5)
     return learner
 
 

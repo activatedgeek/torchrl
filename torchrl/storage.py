@@ -1,23 +1,29 @@
 import torch
+import random
+from collections import deque
 
 
 class EpisodeBuffer:
-    def __init__(self, memory=None):
-        self.memory = memory
+    def __init__(self, size=5000):
+        self.buffer = deque(maxlen=size)
 
-        self._episodes = []
-
-    def append(self, episode):
-        self._episodes.append(episode)
+    def push(self, episode):
+        self.buffer.append(episode)
 
     def extend(self, *episodes):
-        self._episodes.extend(episodes)
+        self.buffer.extend(episodes)
 
     def clear(self):
-        self._episodes.clear()
+        self.buffer.clear()
+
+    def sample(self, batch_size):
+        assert batch_size <= len(self.buffer), \
+            'Unable to sample {} items, current buffer size {}'.format(batch_size, len(self.buffer))
+
+        return random.sample(self.buffer, batch_size)
 
     def __len__(self):
-        return len(self._episodes)
+        return len(self.buffer)
 
 
 class ReplayBuffer:
