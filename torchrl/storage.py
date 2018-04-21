@@ -1,30 +1,4 @@
-from collections import namedtuple
 import torch
-
-# @TODO This approach is not extensible, CPU bottleneck, remove altogether
-Transition = namedtuple('Transition',
-                        ('state', 'action', 'reward', 'next_state', 'done', 'action_log_prob'))
-
-
-class Episode:
-    def __init__(self):
-        self._history = []
-
-    def append(self, state, action, reward, next_state, done, action_log_prob):
-        self._history.append(Transition(state, action, reward, next_state, done, action_log_prob))
-
-    def clear(self):
-        self._history.clear()
-
-    def __iter__(self):
-        for transition in self._history:
-            yield transition
-
-    def __len__(self):
-        return len(self._history)
-
-    def __getitem__(self, index):
-        return self._history[index]
 
 
 class EpisodeBuffer:

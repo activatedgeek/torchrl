@@ -1,3 +1,2 @@
-from .storage import Transition, Episode
-from .storage import ReplayBuffer, ReplayMemory
+from .storage import ReplayBuffer, EpisodeBuffer
 from .episode_runner import EpisodeRunner

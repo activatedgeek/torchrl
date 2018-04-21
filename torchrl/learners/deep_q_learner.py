@@ -41,13 +41,13 @@ class DeepQLearner(BaseLearner):
         value, action = action_values.max(1)
         return action.data[0]
 
-    def transition(self, episode_id, state, action, reward, next_state, done):
+    def transition(self, state, action, reward, next_state, done, episode_id=None):
         self._memory.push(
-            torch.FloatTensor(state).unsqueeze(0),
-            torch.LongTensor([action]).unsqueeze(0),
-            torch.FloatTensor([reward]).unsqueeze(0),
-            torch.FloatTensor(next_state).unsqueeze(0),
-            torch.LongTensor([done]).unsqueeze(0)
+            torch.FloatTensor(state),
+            torch.LongTensor([action]),
+            torch.FloatTensor([reward]),
+            torch.FloatTensor(next_state),
+            torch.LongTensor([done])
         )
 
     def learn(self, *args, **kwargs):
