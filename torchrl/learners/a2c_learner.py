@@ -1,6 +1,5 @@
-import numpy as np
 import torch
-import random
+from copy import deepcopy
 from torch.autograd import Variable
 from torch.distributions import Categorical
 from . import BaseLearner
@@ -12,10 +11,11 @@ class A2CLearner(BaseLearner):
                  eps_max=1.0,
                  eps_min=0.01,
                  temperature=3500.0,
-                 tmax=5):
+                 target_update_freq=5):
         super(A2CLearner, self).__init__(criterion, optimizer)
 
         self.policy_net = policy_net
+        self.target_policy_net = deepcopy(policy_net)
         self.action_space = action_space
 
         # Hyper-Parameters
@@ -23,46 +23,74 @@ class A2CLearner(BaseLearner):
         self.eps_max = eps_max
         self.eps_min = eps_min
         self.temperature = temperature
-        self.tmax = tmax
+        self.target_update_freq = target_update_freq
 
         # Internal State
         self._eps = self.eps_max
-        self._cur_episode = Episode()
-        self._t = 0
+        self._steps = 0
+
+        self._state_batch = []
+        self._action_batch = []
+        self._reward_batch = []
+        self._next_state_batch = []
+        self._done_batch = []
+        self._log_probs_batch = []
+
+    def _clear(self):
+        self._state_batch.clear()
+        self._action_batch.clear()
+        self._reward_batch.clear()
+        self._next_state_batch.clear()
+        self._done_batch.clear()
+        self._log_probs_batch.clear()
 
     def act(self, state, *args, **kwargs):
         action_values, policy = self.policy_net(Variable(torch.FloatTensor([state]), volatile=True))
         dist = Categorical(policy)
-        action = torch.LongTensor([random.randrange(self.action_space)]) if random.random() < self._eps else dist.sample()
-        return action[0], dist.log_prob(action)
+        action = dist.sample()
+        self._log_probs_batch.append(dist.log_prob(action)[0])
+        return action[0]
 
-    def transition(self, episode_id, state, action, reward, next_state, done):
-        self._cur_episode.append(state, action, reward, next_state, done)
-        self._t += 1
+    def transition(self, state, action, reward, next_state, done, episode_id=None):
+        self._state_batch.extend(state)
+        self._action_batch.extend(action)
+        self._reward_batch.extend(reward)
+        self._next_state_batch.extend(next_state)
+        self._done_batch.extend(done)
 
     def learn(self, **kwargs):
-        episode = self._cur_episode
+        state_batch = self._state_batch
+        action_batch = self._action_batch
+        reward_batch = self._reward_batch
+        next_state_batch = self._next_state_batch
+        done_batch = self._done_batch
+        log_probs_batch = self._log_probs_batch
 
-        expected_return = Variable(torch.FloatTensor([0.0]), requires_grad=True)
-        if not episode[-1].done:
-            state_tensor = torch.FloatTensor(episode[-1].state)
-            value, policy = self.policy_net(Variable(state_tensor))
-            expected_return = Variable(value, requires_grad=True)
+        expected_return = 0.0
+        if not done_batch[-1]:
+            state_tensor = torch.FloatTensor([state_batch[-1]])
+            expected_return, _ = self.target_policy_net(Variable(state_tensor, volatile=True))
+            expected_return = expected_return.data[0][0]
 
-        for transition in episode[::-1][1:]:
-            expected_return = transition.reward + self.gamma * expected_return
-            state_tensor = torch.FloatTensor(episode[-1].state)
-            value, policy = self.policy_net(Variable(state_tensor))
+        for state, action, reward, next_state, log_prob in \
+                zip(state_batch[::-1][1:], action_batch[::-1][1:], reward_batch[::-1][1:],
+                    next_state_batch[::-1][1:], log_probs_batch[::-1][1:]):
+            expected_return = reward + self.gamma * expected_return
+            state_tensor = torch.FloatTensor([state])
+            value, policy = self.policy_net(Variable(state_tensor, requires_grad=True))
 
-            value_loss = self.criterion(expected_return, value.detach())
-            policy_loss = Variable(transition.action_log_prob) * (expected_return - value)
+            value_loss = self.criterion(value, Variable(torch.FloatTensor([[expected_return]])))
+            policy_loss = log_prob * (expected_return - value)
 
             (value_loss + policy_loss).backward()
 
         self.optimizer.step()
         self.optimizer.zero_grad()
-        self._cur_episode.clear()
+        self._clear()
 
-        self._eps = self.eps_min + \
-                    (self.eps_max - self.eps_min) * np.exp(-float(self._t) * 1. / self.temperature)
+        self._steps += 1
+        # self._eps = self.eps_min + \
+        #             (self.eps_max - self.eps_min) * np.exp(-float(self._steps) * 1. / self.temperature)
 
+        if self._steps % self.target_update_freq == 0:
+            self.target_policy_net.load_state_dict(self.policy_net.state_dict())

@@ -19,7 +19,7 @@ class SimplePolicyNet(nn.Module):
         ]))
 
         self.value = nn.Linear(self._output_size, 1)
-        self.policy = nn.Softmax()
+        self.policy = nn.Softmax(dim=1)
 
     def forward(self, obs):
         values = self.net(obs)
