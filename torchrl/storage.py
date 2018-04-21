@@ -68,6 +68,7 @@ class ReplayBuffer:
         self.action_buffer.cuda()
         self.reward_buffer.cuda()
         self.next_state_buffer.cuda()
+        self.done_buffer.cuda()
 
     def push(self, state, action, reward, next_state, done, *args, **kwargs):
         incoming_size = state.shape[0]
