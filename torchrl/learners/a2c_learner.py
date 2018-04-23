@@ -5,12 +5,21 @@ from . import BaseLearner
 
 
 class A2CLearner(BaseLearner):
-    def __init__(self, actor_critic_net, criterion, optimizer, action_space,
+    def __init__(self, actor_critic_net, optimizer, action_space,
                  gamma=0.99,
                  tau=1.0,
                  beta=0.01,
                  clip_grad_norm=10):
-        super(A2CLearner, self).__init__(criterion, optimizer)
+        """
+        :param actor_critic_net: The Actor-Critic Network
+        :param optimizer: Optimizer for stepping
+        :param action_space: shape of the action space
+        :param gamma: Reward discount factor
+        :param tau: Discount factor for generalized advantage estimator
+        :param beta: Parameter for the entropy loss term
+        :param clip_grad_norm: Max value of the gradient norms
+        """
+        super(A2CLearner, self).__init__(None, optimizer)
 
         self.ac_net = actor_critic_net
 

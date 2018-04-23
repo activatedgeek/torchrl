@@ -21,7 +21,7 @@ class SimpleACNet(nn.Module):
         self.critic = nn.Linear(64, 1)
 
     def forward(self, obs):
-        h = self.net(obs)
-        value = self.critic(h)
-        policy = self.actor(h)
+        h_tensor = self.net(obs)
+        value = self.critic(h_tensor)
+        policy = self.actor(h_tensor)
         return value, policy
