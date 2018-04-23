@@ -9,7 +9,7 @@ class A2CLearner(BaseLearner):
                  gamma=0.99,
                  tau=1.0,
                  beta=0.01,
-                 clip_grad_norm=40):
+                 clip_grad_norm=10):
         super(A2CLearner, self).__init__(criterion, optimizer)
 
         self.ac_net = actor_critic_net
@@ -84,14 +84,14 @@ class A2CLearner(BaseLearner):
             expected_return = reward_batch[i] + self.gamma * expected_return
             advantage = expected_return - value_batch[i]
 
-            value_loss += 0.5 * advantage.pow(2)
+            value_loss += advantage.pow(2)
 
             td_error = reward_batch[i] + self.gamma * value_batch[i + 1].data - value_batch[i].data
             gae = td_error + self.gamma * self.tau * gae
 
             policy_loss -= log_prob_batch[i] * Variable(gae) + self.beta * entropy_batch[i]
 
-        (policy_loss + 0.5 * value_loss).backward()
+        (policy_loss + value_loss / len(reward_batch)).backward()
         torch.nn.utils.clip_grad_norm(self.ac_net.parameters(), self.clip_grad_norm)
 
         self.optimizer.step()

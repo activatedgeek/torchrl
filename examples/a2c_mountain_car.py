@@ -20,7 +20,7 @@ def create_learner(env):
     rms_prop = RMSprop(policy_net.parameters(), lr=1e-3, weight_decay=0.99)
 
     learner = MountainCarLearner(policy_net, mse_loss, rms_prop, (env.action_space.n,),
-                                 gamma=0.99, tau=1.0, beta=0.01, clip_grad_norm=40)
+                                 gamma=0.99, tau=0.95, beta=0.01, clip_grad_norm=10)
 
     return learner
 
