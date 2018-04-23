@@ -1,5 +1,4 @@
 import gym
-from torch.nn import MSELoss
 from torch.optim import RMSprop
 
 from torchrl.models import SimpleACNet
@@ -16,10 +15,9 @@ class MountainCarLearner(A2CLearner):
 def create_learner(env):
     policy_net = SimpleACNet(env.observation_space.shape[0], env.action_space.n)
 
-    mse_loss = MSELoss()
     rms_prop = RMSprop(policy_net.parameters(), lr=1e-3, weight_decay=0.99)
 
-    learner = MountainCarLearner(policy_net, mse_loss, rms_prop, (env.action_space.n,),
+    learner = MountainCarLearner(policy_net, rms_prop, (env.action_space.n,),
                                  gamma=0.99, tau=0.95, beta=0.01, clip_grad_norm=10)
 
     return learner
