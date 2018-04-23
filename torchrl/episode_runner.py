@@ -42,8 +42,7 @@ class EpisodeRunner:
         :param episode_id: Unique identifier to identify the current transition's episode
         :return: batch of transitions
         """
-        if self._done:
-            return
+        assert not self._done, 'EpisodeRunner has ended. Call .reset() to reuse.'
 
         assert isinstance(learner, BaseLearner),\
             '"learner" should inherit from "BaseLearner", found invalid type "{}"'.format(type(learner))
