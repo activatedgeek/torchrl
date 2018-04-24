@@ -2,13 +2,14 @@ import torch
 import numpy as np
 from copy import deepcopy
 from torch.autograd import Variable
+from torch.nn import MSELoss
 from . import BaseLearner
 from .. import ReplayBuffer
 from ..policies import epsilon_greedy
 
 
 class DeepQLearner(BaseLearner):
-    def __init__(self, q_net, criterion, optimizer, observation_space, action_shape,
+    def __init__(self, q_net, optimizer, observation_space, action_shape,
                  gamma=0.99,
                  eps_max=1.0,
                  eps_min=0.01,
@@ -30,7 +31,7 @@ class DeepQLearner(BaseLearner):
         :param batch_size: batch size to sample from replay buffer
         :param target_update_freq: number of steps to update target network parameters after
         """
-        super(DeepQLearner, self).__init__(criterion, optimizer)
+        super(DeepQLearner, self).__init__(optimizer)
 
         self.q_net = q_net
         self.target_q_net = deepcopy(q_net)
@@ -83,7 +84,7 @@ class DeepQLearner(BaseLearner):
         max_next_q_values = self.target_q_net(batch_next_state).max(1)[0].unsqueeze(1)
         expected_q_values = batch_reward + self.gamma * max_next_q_values
 
-        loss = self.criterion(current_q_values, expected_q_values)
+        loss = MSELoss()(current_q_values, expected_q_values)
 
         loss.backward()
         self.optimizer.step()
@@ -95,3 +96,5 @@ class DeepQLearner(BaseLearner):
 
         if self._steps % self.target_update_freq == 0:
             self.target_q_net.load_state_dict(self.q_net.state_dict())
+
+        return loss

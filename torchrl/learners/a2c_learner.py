@@ -19,7 +19,7 @@ class A2CLearner(BaseLearner):
         :param beta: Parameter for the entropy loss term
         :param clip_grad_norm: Max value of the gradient norms
         """
-        super(A2CLearner, self).__init__(None, optimizer)
+        super(A2CLearner, self).__init__(optimizer)
 
         self.ac_net = actor_critic_net
 

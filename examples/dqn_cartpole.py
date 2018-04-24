@@ -1,5 +1,4 @@
 import gym
-from torch.nn import SmoothL1Loss
 from torch.optim import Adam
 
 from torchrl.models import SimpleQNet
@@ -23,10 +22,9 @@ class CartPoleLearner(DeepQLearner):
 def create_learner(env):
     q_net = SimpleQNet(env.observation_space.shape[0], env.action_space.n)
 
-    smooth_loss = SmoothL1Loss()
     adam = Adam(q_net.parameters(), lr=1e-4)
 
-    learner = CartPoleLearner(q_net, smooth_loss, adam,
+    learner = CartPoleLearner(q_net, adam,
                               env.observation_space.shape, (env.action_space.n,),
                               gamma=0.8, eps_max=1.0, eps_min=0.1, temperature=2000.0,
                               memory_size=5000, batch_size=64, target_update_freq=5)
