@@ -1,1 +1,3 @@
 pylint~=1.8
+tensorboardX~=1.1
+visdom~=0.1
