@@ -1,11 +1,14 @@
+import os
 import gym
 from torch.optim import Adam
+from tensorboardX import SummaryWriter
 
 from torchrl.models import SimpleQNet
 from torchrl.learners import DeepQLearner
 from torchrl import EpisodeRunner
 
 NUM_EPISODES = 300
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'log', 'dqn_cartpole')
 
 
 class CartPoleLearner(DeepQLearner):
@@ -35,20 +38,27 @@ def main():
     env = gym.make('CartPole-v1')
     runner = EpisodeRunner(env, max_steps=1000)
     learner = create_learner(env)
+    if not os.path.isdir(LOG_DIR):
+        os.makedirs(LOG_DIR)
+    logger = SummaryWriter(LOG_DIR)
 
     for i in range(1, NUM_EPISODES + 1):
         runner.reset()
+
+        steps = 0
         reward = 0
 
         while not runner.is_done():
             state_batch, action_batch, reward_batch, next_state_batch, done_batch = runner.run(learner, steps=1)
             learner.transition(state_batch, action_batch, reward_batch, next_state_batch, done_batch)
             learner.learn()
+            steps += len(reward_batch)
             reward += sum(reward_batch)
 
-        if i % 10 == 0:
-            print('Episode {} reward: {}'.format(i, reward))
+        logger.add_scalar('episode length', steps, i + 1)
+        logger.add_scalar('reward', steps, i + 1)
 
+    logger.close()
     env.close()
 
 
