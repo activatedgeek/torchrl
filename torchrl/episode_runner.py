@@ -30,7 +30,21 @@ class EpisodeRunner:
         self._done = False
 
     def is_done(self):
+        """
+        :return: True if the episode has ended, False otherwise
+        """
         return self._done
+
+    def act(self, learner):
+        """
+        This routine is called from the `run` routine every time an action
+        is needed for the environment to step. This function can be overridden
+        in case the learner returns more than just the actions
+        :param learner: An agent of type BaseLearner
+        :return: Return the action(s) needed by the environment to act
+        """
+        action = learner.act(self._state)
+        return action
 
     def run(self, learner, steps=None, render=False, fps=30, episode_id=None):
         """
@@ -62,7 +76,7 @@ class EpisodeRunner:
         done_history = []
 
         while not self._done and steps:
-            action = learner.act(self._state)
+            action = self.act(learner)
             next_state, reward, self._done, info = self.env.step(action)
 
             state_history.append(self._state)

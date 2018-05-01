@@ -100,7 +100,7 @@ class A2CLearner(BaseLearner):
 
             policy_loss -= log_prob_batch[i] * Variable(gae) + self.beta * entropy_batch[i]
 
-        (policy_loss + value_loss / len(reward_batch)).backward()
+        (policy_loss + value_loss).backward()
         torch.nn.utils.clip_grad_norm(self.ac_net.parameters(), self.clip_grad_norm)
 
         self.optimizer.step()
