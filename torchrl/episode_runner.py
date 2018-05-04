@@ -15,18 +15,18 @@ class EpisodeRunner:
         """
         self.env = env
 
-        # Parameters
         self.max_steps = max_steps
 
-        # Internal State
-        self._state = None
+        self._obs = None
         self._done = False
+
+        self.reset()
 
     def reset(self):
         """
         Reset internal state for the `run` method to be reused
         """
-        self._state = None
+        self._obs = self.env.reset()
         self._done = False
 
     def is_done(self):
@@ -43,17 +43,17 @@ class EpisodeRunner:
         :param learner: An agent of type BaseLearner
         :return: Return the action(s) needed by the environment to act
         """
-        action = learner.act(self._state)
+        action = learner.act(self._obs)
         return action
 
-    def run(self, learner, steps=None, render=False, fps=30, episode_id=None):
+    def run(self, learner, steps=None, render=False, fps=30, store=False):
         """
 
         :param learner: An agent of type BaseLearner
         :param steps: Number of maximum steps in the current rollout
         :param render: Flag to render the environment, True or False
         :param fps: Rendering rate of the environment, frames per second if render is True
-        :param episode_id: Unique identifier to identify the current transition's episode
+        :param store: Flag to store the history of the run
         :return: batch of transitions
         """
         assert not self._done, 'EpisodeRunner has ended. Call .reset() to reuse.'
@@ -63,33 +63,33 @@ class EpisodeRunner:
 
         steps = steps or self.max_steps
 
-        if self._state is None:
-            self._state = self.env.reset()
-            if render:
-                self.env.render()
-                time.sleep(1. / fps)
+        if render:
+            self.env.render()
+            time.sleep(1. / fps)
 
-        state_history = []
+        obs_history = []
         action_history = []
         reward_history = []
-        next_state_history = []
+        next_obs_history = []
         done_history = []
 
         while not self._done and steps:
             action = self.act(learner)
-            next_state, reward, self._done, info = self.env.step(action)
+            next_obs, reward, self._done, info = self.env.step(action)
 
-            state_history.append(self._state)
-            action_history.append(action)
-            reward_history.append(reward)
-            next_state_history.append(next_state)
-            done_history.append(int(self._done))
+            if store:
+                obs_history.append(self._obs)
+                action_history.append(action)
+                reward_history.append(reward)
+                next_obs_history.append(next_obs)
+                done_history.append(int(self._done))
 
-            self._state = next_state
+            self._obs = next_obs
             steps -= 1
 
             if render:
                 self.env.render()
                 time.sleep(1. / fps)
 
-        return state_history, action_history, reward_history, next_state_history, done_history
+        if store:
+            return obs_history, action_history, reward_history, next_obs_history, done_history

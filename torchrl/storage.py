@@ -3,22 +3,22 @@ import random
 from collections import deque
 
 
-class EpisodeBuffer:
-    def __init__(self, size=5000):
+class CPUReplayBuffer:
+    def __init__(self, size=int(1e6)):
         self.buffer = deque(maxlen=size)
 
-    def push(self, episode):
-        self.buffer.append(episode)
+    def push(self, item):
+        self.buffer.append(item)
 
-    def extend(self, *episodes):
-        self.buffer.extend(episodes)
+    def extend(self, *items):
+        self.buffer.extend(*items)
 
     def clear(self):
         self.buffer.clear()
 
     def sample(self, batch_size):
-        assert batch_size <= len(self.buffer), \
-            'Unable to sample {} items, current buffer size {}'.format(batch_size, len(self.buffer))
+        assert batch_size <= self.__len__(), \
+            'Unable to sample {} items, current buffer size {}'.format(batch_size, self.__len__())
 
         return random.sample(self.buffer, batch_size)
 
@@ -30,7 +30,7 @@ class ReplayBuffer:
     """
     This class implements a GPU-ready replay buffer
     """
-    def __init__(self, state_shape, action_shape, size=100000):
+    def __init__(self, state_shape, action_shape, size=int(1e6)):
         self.state_shape = state_shape
         self.action_shape = action_shape
         self.buffer_size = size
@@ -77,10 +77,11 @@ class ReplayBuffer:
         self.done_buffer = torch.cat([self.done_buffer, done], dim=0)
 
     def sample(self, batch_size):
-        assert batch_size <= self._size, \
-            'Unable to sample {} items, current buffer size {}'.format(batch_size, self._size)
+        total_size = self.__len__()
+        assert batch_size <= total_size, \
+            'Unable to sample {} items, current buffer size {}'.format(batch_size, total_size)
 
-        batch_index = (torch.rand(batch_size) * self._size).long()
+        batch_index = (torch.rand(batch_size) * total_size).long()
 
         state_batch = self.state_buffer.index_select(0, batch_index)
         action_batch = self.action_buffer.index_select(0, batch_index)
