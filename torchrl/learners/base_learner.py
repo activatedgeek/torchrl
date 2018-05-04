@@ -19,22 +19,6 @@ class BaseLearner(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def transition(self, state, action, reward, next_state, done, episode_id=None):
-        """
-        This routine can be used to handle the transition information returned by the
-        environment. All inputs should be batches of information.
-
-        :param state: list of states
-        :param action: list of actions
-        :param reward: list of rewards
-        :param next_state: list of next_states
-        :param done: list of done
-        :param episode_id: list of episode_id(s)
-        :return:
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def learn(self, *args, **kwargs):
         """
         This method represents the learning step
