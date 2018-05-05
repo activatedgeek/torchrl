@@ -6,6 +6,8 @@ class BaseLearner(metaclass=abc.ABCMeta):
     This is base runner specification which can encapsulate everything
     how a Reinforcement Learning Algorithm would function.
     """
+    def __init__(self):
+        self.is_cuda = False
 
     @abc.abstractmethod
     def act(self, *args, **kwargs):
@@ -36,7 +38,15 @@ class BaseLearner(metaclass=abc.ABCMeta):
     def load(self, dir):
         """
         Load a pre-trained agent
-        :param dir: The directory from a pre-trained agent (must follow the protocol in save)
+        :param dir: The directory from a pre-trained agent (must be inverse of save)
+        :return:
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def cuda(self):
+        """
+        Enable CUDA on the Learner
         :return:
         """
         raise NotImplementedError
