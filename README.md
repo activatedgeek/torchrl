@@ -17,3 +17,7 @@
 
 * [DQN on Cartpole](./examples/dqn_cartpole.py)
 * [A2C on Mountain Car](./examples/a2c_mountain_car.py) [Needs Hyperparameter tuning]
+
+## Experimental Implementations
+
+* [DDPG](./experiments/ddpg)
