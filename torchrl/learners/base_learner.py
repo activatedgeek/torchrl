@@ -8,6 +8,7 @@ class BaseLearner(metaclass=abc.ABCMeta):
     """
     def __init__(self):
         self.is_cuda = False
+        self.training = False
 
     @abc.abstractmethod
     def act(self, *args, **kwargs):
@@ -26,6 +27,37 @@ class BaseLearner(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def cuda(self):
+        """
+        Enable CUDA on the Learner
+        :return:
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def train(self):
+        """
+        Enable train mode for the agent (helpful with NN agents with BatchNorm, Dropout etc.)
+        :return:
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def eval(self):
+        """
+        Enable evaluation mode for the agent (helpful with NN agents with BatchNorm, Dropout etc.)
+        :return:
+        """
+        raise NotImplementedError
+
+    def reset(self):
+        """
+        Optional function to reset learner's internals
+        :return:
+        """
+        pass
+
+    @abc.abstractmethod
     def save(self, dir):
         """
         Store the agent for future usage
@@ -39,14 +71,6 @@ class BaseLearner(metaclass=abc.ABCMeta):
         """
         Load a pre-trained agent
         :param dir: The directory from a pre-trained agent (must be inverse of save)
-        :return:
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def cuda(self):
-        """
-        Enable CUDA on the Learner
         :return:
         """
         raise NotImplementedError

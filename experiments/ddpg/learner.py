@@ -5,7 +5,7 @@ from torch.optim import Adam
 import torch.nn as nn
 from torch.autograd import Variable
 from torchrl.learners import BaseLearner
-from torchrl.utils import polyak_average, OUNoise
+from torchrl.utils import polyak_average
 
 from models import Actor, Critic
 
@@ -15,7 +15,7 @@ class BaseDDPGLearner(BaseLearner):
                  actor_lr=1e-4,
                  critic_lr=1e-3,
                  gamma=0.99,
-                 tau=1e-3):
+                 tau=1e-2):
         super(BaseDDPGLearner, self).__init__()
 
         self.observation_space = observation_space
@@ -33,12 +33,28 @@ class BaseDDPGLearner(BaseLearner):
         self.tau = tau
         self.noise = noise
 
+        self.train()
+
     def cuda(self):
         self.actor.cuda()
         self.target_actor.cuda()
         self.critic.cuda()
         self.target_critic.cuda()
         self.is_cuda = True
+
+    def train(self):
+        self.actor.train()
+        self.target_actor.train()
+        self.critic.train()
+        self.target_critic.train()
+        self.training = True
+
+    def eval(self):
+        self.actor.eval()
+        self.target_actor.eval()
+        self.critic.eval()
+        self.target_critic.eval()
+        self.training = False
 
     def act(self, obs, **kwargs):
         return self.actor(obs)
@@ -77,6 +93,9 @@ class BaseDDPGLearner(BaseLearner):
         polyak_average(self.critic, self.target_critic, self.tau)
 
         return actor_loss.detach().cpu().data.numpy(), critic_loss.detach().cpu().data.numpy()
+
+    def reset(self):
+        self.noise.reset()
 
     # @TODO: save learner
     def save(self, dir):
