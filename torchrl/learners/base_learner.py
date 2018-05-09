@@ -29,7 +29,7 @@ class BaseLearner(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def cuda(self):
         """
-        Enable CUDA on the Learner
+        Enable CUDA on the Learner, don't forget to set self.is_cuda
         :return:
         """
         raise NotImplementedError
@@ -37,7 +37,8 @@ class BaseLearner(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def train(self):
         """
-        Enable train mode for the agent (helpful with NN agents with BatchNorm, Dropout etc.)
+        Enable train mode for the agent (helpful with NN agents with BatchNorm, Dropout etc.),
+        don't forget to set self.training appropriately
         :return:
         """
         raise NotImplementedError
@@ -45,7 +46,8 @@ class BaseLearner(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def eval(self):
         """
-        Enable evaluation mode for the agent (helpful with NN agents with BatchNorm, Dropout etc.)
+        Enable evaluation mode for the agent (helpful with NN agents with BatchNorm, Dropout etc.),
+        don't forget to set self.training appropriately
         :return:
         """
         raise NotImplementedError
