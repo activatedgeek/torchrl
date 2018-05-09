@@ -33,7 +33,7 @@ class MultiProcWrapper:
 
         self.p_conn, self.child_conn = zip(*[Pipe() for _ in range(self.n_procs)])
 
-        self.ps = [
+        self.proc_list = [
             Process(target=target_fn, args=(conn, obj_fn))
             for conn, obj_fn in zip(self.child_conn, obj_fns)
         ]
@@ -42,16 +42,16 @@ class MultiProcWrapper:
             self.start()
 
     def start(self):
-        for p in self.ps:
-            p.daemon = self.daemon
-            p.start()
+        for proc in self.proc_list:
+            proc.daemon = self.daemon
+            proc.start()
 
     def stop(self):
         self.exec_remote('stop')
 
-        for p in self.ps:
-            if p.is_alive():
-                p.join()
+        for proc in self.proc_list:
+            if proc.is_alive():
+                proc.join()
 
     def exec_remote(self, fn_string, args=None, kwargs=None, proc=None):
         if proc is None:

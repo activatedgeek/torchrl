@@ -133,7 +133,7 @@ def main(args):
         env.observation_space,
         env.action_space,
         OUNoise(
-            mu=args.ou_mu * np.ones(env.action_space.shape[0]),
+            mean=args.ou_mu * np.ones(env.action_space.shape[0]),
             sigma=args.ou_sigma * np.ones(env.action_space.shape[0]),
             theta=args.ou_theta
         ),

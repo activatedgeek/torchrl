@@ -36,9 +36,9 @@ class OUNoise:
     This class implements the Ornstein-Uhlenbeck process for noise, generously taken from OpenAI
     Baselines
     """
-    def __init__(self, mu, sigma, theta=0.15, delta_t=1e-2, x_init=None):
+    def __init__(self, mean, sigma, theta=0.15, delta_t=1e-2, x_init=None):
         self.theta = theta
-        self.mu = mu
+        self.mean = mean
         self.sigma = sigma
         self.delta_t = delta_t
         self.x_init = x_init
@@ -47,13 +47,13 @@ class OUNoise:
 
     def __call__(self):
         noise = self.x_prev + \
-            self.theta * (self.mu - self.x_prev) * self.delta_t + \
-            self.sigma * np.sqrt(self.delta_t) * np.random.normal(size=self.mu.shape)
+                self.theta * (self.mean - self.x_prev) * self.delta_t + \
+                self.sigma * np.sqrt(self.delta_t) * np.random.normal(size=self.mean.shape)
         self.x_prev = noise
         return noise
 
     def reset(self):
-        self.x_prev = self.x_init if self.x_init is not None else np.zeros_like(self.mu)
+        self.x_prev = self.x_init if self.x_init is not None else np.zeros_like(self.mean)
 
     def __repr__(self):
-        return 'OrnsteinUhlenbeckActionNoise(mu={}, sigma={})'.format(self.mu, self.sigma)
+        return 'OrnsteinUhlenbeckActionNoise(mu={}, sigma={})'.format(self.mean, self.sigma)
