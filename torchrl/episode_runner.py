@@ -1,5 +1,9 @@
 import time
-from .learners import BaseLearner
+from torchrl.learners import BaseLearner
+from torchrl.multi_proc_wrapper import MultiProcWrapper
+
+
+DEFAULT_MAX_STEPS = int(1e6)
 
 
 class EpisodeRunner:
@@ -8,7 +12,7 @@ class EpisodeRunner:
     object. Each call to the `run()` method will run one episode for specified
     number of steps. Call `reset()` to reuse the same object again
     """
-    def __init__(self, env, max_steps=100000000):
+    def __init__(self, env, max_steps=DEFAULT_MAX_STEPS):
         """
         :param env: Environment with Gym-like API
         :param max_steps: Maximum number of steps per episode (useful for non-episodic environments)
@@ -93,3 +97,20 @@ class EpisodeRunner:
 
         if store:
             return obs_history, action_history, reward_history, next_obs_history, done_history
+
+    def stop(self):
+        self.env.close()
+
+
+class MultiEpisodeRunner(MultiProcWrapper):
+    """
+    This class is the parallel version of EpisodeRunner
+    """
+    def reset(self, env_id=None):
+        self.exec_remote('reset', proc=env_id)
+
+    def is_done(self):
+        return self.exec_remote('is_done')
+
+    def run(self, *args, **kwargs):
+        return self.exec_remote('run', args=args, kwargs=kwargs)
