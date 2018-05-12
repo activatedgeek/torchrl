@@ -16,10 +16,7 @@ class BaseDDPGLearner(BaseLearner):
                  critic_lr=1e-3,
                  gamma=0.99,
                  tau=1e-2):
-        super(BaseDDPGLearner, self).__init__()
-
-        self.observation_space = observation_space
-        self.action_space = action_space
+        super(BaseDDPGLearner, self).__init__(observation_space, action_space)
 
         self.actor = Actor(observation_space.shape[0], action_space.shape[0])
         self.target_actor = deepcopy(self.actor)
@@ -28,6 +25,8 @@ class BaseDDPGLearner(BaseLearner):
         self.critic = Critic(observation_space.shape[0], action_space.shape[0])
         self.target_critic = deepcopy(self.critic)
         self.critic_optim = Adam(self.critic.parameters(), lr=critic_lr)
+
+        self.mse_loss = nn.MSELoss()
 
         self.gamma = gamma
         self.tau = tau
@@ -77,7 +76,7 @@ class BaseDDPGLearner(BaseLearner):
 
         target_q = reward_tensor + self.gamma * self.target_critic(next_obs_tensor, self.target_actor(next_obs_tensor))
 
-        critic_loss = nn.MSELoss()(current_q, target_q)
+        critic_loss = self.mse_loss(current_q, target_q)
 
         self.critic_optim.zero_grad()
         critic_loss.backward()

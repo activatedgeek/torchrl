@@ -6,9 +6,11 @@ class BaseLearner(metaclass=abc.ABCMeta):
     This is base runner specification which can encapsulate everything
     how a Reinforcement Learning Algorithm would function.
     """
-    def __init__(self):
+    def __init__(self, observation_space, action_space):
         self.is_cuda = False
         self.training = False
+        self.observation_space = observation_space
+        self.action_space = action_space
 
     @abc.abstractmethod
     def act(self, *args, **kwargs):

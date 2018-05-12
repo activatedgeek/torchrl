@@ -2,6 +2,28 @@ import torch
 import torch.nn as nn
 
 
+class QNet(nn.Module):
+    def __init__(self, input_size, output_size):
+        super(QNet, self).__init__()
+
+        self._input_size = input_size
+        self._output_size = output_size
+
+        self.net = nn.Sequential(
+            nn.Linear(self._input_size, 512),
+            nn.ReLU(),
+            nn.Linear(512, self._output_size)
+        )
+
+    def forward(self, obs):
+        values = self.net(obs)
+        return values
+
+    def _init_weights(self):
+        nn.init.xavier_uniform(self.net[0].weight)
+        nn.init.xavier_uniform(self.net[2].weight)
+
+
 class Actor(nn.Module):
     def __init__(self, state_size, action_size, hidden_size=64):
         super(Actor, self).__init__()

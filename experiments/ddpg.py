@@ -9,7 +9,7 @@ from tensorboardX import SummaryWriter
 from torchrl import EpisodeRunner, MultiEpisodeRunner, CPUReplayBuffer
 from torchrl.utils import set_seeds, OUNoise
 
-from learner import BaseDDPGLearner
+from ddpg_learner import BaseDDPGLearner
 
 
 class DDPGRunner(EpisodeRunner):

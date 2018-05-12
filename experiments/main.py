@@ -5,10 +5,8 @@ import importlib
 
 def parse_common(parser):
     # Generic arguments
-    # @TODO make --env and --algo required
-    parser.add_argument('--env', type=str, metavar='', default='MountainCarContinuous-v0',
-                        help='Gym environment id')
-    parser.add_argument('--algo', type=str, metavar='', default='ddpg', help='Algorithm to run')
+    parser.add_argument('--env', type=str, required=True, help='Gym environment id')
+    parser.add_argument('--algo', type=str, required=True, help='Algorithm to run')
     parser.add_argument('--num-processes', type=int, metavar='', default=1,
                         help='Number of parallel trajectories to run')
     parser.add_argument('--seed', type=int, metavar='', default=0, help='Random Seed')
@@ -28,14 +26,14 @@ def parse_common(parser):
                         help='Total number of trajectory steps to see before complete training')
     parser.add_argument('--batch-size', type=int, metavar='', default=128,
                         help='Batch size for training')
+    parser.add_argument('--buffer-size', type=int, metavar='', default=int(1e6), help='Size of the replay buffer')
 
 
 def parse_ddpg(parser):
     parser.add_argument('--tau', type=float, metavar='', default=1e-2, help='Soft Parameter update coefficient')
-    parser.add_argument('--buffer-size', type=int, metavar='', default=int(1e6), help='Size of the replay buffer')
-    parser.add_argument('--ou-mu', type=float, metavar='', default=0.0, help='Mu parameter for OU Noise')
-    parser.add_argument('--ou-theta', type=float, metavar='', default=0.15, help='Theta parameter for OU Noise')
-    parser.add_argument('--ou-sigma', type=float, metavar='', default=0.2, help='Std Deviation for OU Noise')
+    parser.add_argument('--ou-mu', type=float, metavar='', default=0.0, help='Mean for OU Noise')
+    parser.add_argument('--ou-theta', type=float, metavar='', default=0.15, help='Theta for OU Noise')
+    parser.add_argument('--ou-sigma', type=float, metavar='', default=0.2, help='Standard Deviation for OU Noise')
 
 
 def parse_ppo(parser):
@@ -49,6 +47,15 @@ def parse_pg(parser):
     parser.add_argument('--critic-lr', type=float, metavar='', default=1e-3, help='Learning rate for critic')
     parser.add_argument('--clip-grad-norm', type=float, metavar='', default=10.0,
                         help='Gradient norm clipping parameter')
+
+
+def parse_dqn(parser):
+    parser.add_argument('--eps-max', type=float, metavar='', default=1.0,
+                        help='Maximum value for epsilon-greedy')
+    parser.add_argument('--eps-min', type=float, metavar='', default=0.01,
+                        help='Minimum value for epsilon-greedy')
+    parser.add_argument('--target-update-interval', type=int, metavar='', default=2,
+                        help='Number of training steps before updating target Q-network')
 
 
 def parse_args():
@@ -66,6 +73,9 @@ def parse_args():
     ppo_parser = parser.add_argument_group('PPO Arguments')
     parse_ppo(ppo_parser)
 
+    dqn_parser = parser.add_argument_group('DQN Arguments')
+    parse_dqn(dqn_parser)
+
     args = parser.parse_args()
 
     if not torch.cuda.is_available():
@@ -76,5 +86,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    algo = importlib.import_module(args.algo + '.' + 'run')
+    algo = importlib.import_module(args.algo)
     algo.main(args)

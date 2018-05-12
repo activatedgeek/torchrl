@@ -13,11 +13,11 @@
 
 * Scalability
 
-## Examples
-
-* [DQN on Cartpole](./examples/dqn_cartpole.py)
-* [A2C on Mountain Car](./examples/a2c_mountain_car.py) [Needs Hyperparameter tuning]
-
 ## Experimental Implementations
 
-* [DDPG](./experiments/ddpg)
+Some implementations using the `torchrl` framework architecture.
+
+* A2C
+* [DDPG](./experiments/ddpg.py)
+* [DQN](./experiments/dqn.py)
+* PPO
