@@ -15,7 +15,9 @@ class BaseLearner(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def act(self, *args, **kwargs):
         """
-        This is the method that should be called at every step of the episode
+        This is the method that should be called at every step of the episode.
+        IMPORTANT: This method should be compatible with batches
+
         :param state: Representation of the state
         :return: identity of the action to be taken, as desired by the environment
         """

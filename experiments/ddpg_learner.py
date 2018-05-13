@@ -4,7 +4,8 @@ import numpy as np
 from torch.optim import Adam
 import torch.nn as nn
 from torch.autograd import Variable
-from torchrl.learners import BaseLearner
+
+from torchrl import BaseLearner
 from torchrl.utils import polyak_average
 
 from models import Actor, Critic
@@ -35,15 +36,17 @@ class BaseDDPGLearner(BaseLearner):
         self.train()
 
     def act(self, obs, **kwargs):
-        return self.actor(obs)
+        action = self.actor(obs)
+        action = action.cpu().data.numpy()
+        action += self.noise()
+        action = np.clip(action, self.action_space.low, self.action_space.high)
+        return np.expand_dims(action, axis=1)
 
-    def learn(self, batch, **kwargs):
-        obs, action, reward, next_obs, _ = list(zip(*batch))
-
-        obs_tensor = Variable(torch.from_numpy(np.array(list(obs))).float(), requires_grad=True)
-        action_tensor = Variable(torch.from_numpy(np.array(list(action))).float(), requires_grad=True)
-        reward_tensor = Variable(torch.from_numpy(np.array(list(reward))).float().unsqueeze(1))
-        next_obs_tensor = Variable(torch.from_numpy(np.array(list(next_obs))).float(), volatile=True)
+    def learn(self, obs, action, reward, next_obs, done, **kwargs):
+        obs_tensor = Variable(torch.from_numpy(obs).float(), requires_grad=True)
+        action_tensor = Variable(torch.from_numpy(action).float(), requires_grad=True)
+        reward_tensor = Variable(torch.from_numpy(reward).float())
+        next_obs_tensor = Variable(torch.from_numpy(next_obs).float(), volatile=True)
 
         if self.is_cuda:
             obs_tensor = obs_tensor.cuda()
@@ -57,15 +60,15 @@ class BaseDDPGLearner(BaseLearner):
 
         critic_loss = self.mse_loss(current_q, target_q)
 
-        self.critic_optim.zero_grad()
         critic_loss.backward()
         self.critic_optim.step()
+        self.critic_optim.zero_grad()
 
         actor_loss = self.critic(obs_tensor, self.actor(obs_tensor)).mean()
 
-        self.actor_optim.zero_grad()
         actor_loss.backward()
         self.actor_optim.step()
+        self.actor_optim.zero_grad()
 
         polyak_average(self.actor, self.target_actor, self.tau)
         polyak_average(self.critic, self.target_critic, self.tau)

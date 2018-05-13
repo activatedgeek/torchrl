@@ -3,7 +3,7 @@ from torch.optim import RMSprop
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
-from torchrl.learners import BaseLearner
+from torchrl import BaseLearner
 
 from models import ACNet
 
@@ -27,7 +27,7 @@ class BaseA2CLearner(BaseLearner):
         _, prob = self.ac_net(obs)
         dist = Categorical(prob)
         action = dist.sample()
-        return action.cpu().data.numpy()
+        return action.unsqueeze(1).cpu().data.numpy()
 
     # @TODO: accomodate for episode boundaries when batching
     def learn(self, obs, action, reward, next_obs, done, **kwargs):

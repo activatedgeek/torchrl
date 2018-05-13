@@ -5,7 +5,8 @@ import torch.nn as nn
 from torch.autograd import Variable
 from torch.optim import Adam
 
-from torchrl.learners import BaseLearner
+from torchrl import BaseLearner
+from torchrl.policies import epsilon_greedy
 
 from models import QNet
 
@@ -38,15 +39,16 @@ class BaseDQNLearner(BaseLearner):
         self.train()
 
     def act(self, obs, **kwargs):
-        return self.q_net(obs)
+        actions = self.q_net(obs)
+        actions = actions.max(dim=1)[1].cpu().data.numpy()
+        actions = epsilon_greedy(self.action_space.n, actions, self.eps)
+        return actions
 
-    def learn(self, batch, **kwargs):
-        obs, action, reward, next_obs, _ = list(zip(*batch))
-
-        obs_tensor = Variable(torch.from_numpy(np.array(list(obs))).float())
-        action_tensor = Variable(torch.from_numpy(np.array(list(action))).long().unsqueeze(1))
-        reward_tensor = Variable(torch.from_numpy(np.array(list(reward))).float().unsqueeze(1))
-        next_obs_tensor = Variable(torch.from_numpy(np.array(list(next_obs))).float(), volatile=True)
+    def learn(self, obs, action, reward, next_obs, done, **kwargs):
+        obs_tensor = Variable(torch.from_numpy(obs).float())
+        action_tensor = Variable(torch.from_numpy(action).long())
+        reward_tensor = Variable(torch.from_numpy(reward).float())
+        next_obs_tensor = Variable(torch.from_numpy(next_obs).float(), volatile=True)
 
         if self.is_cuda:
             obs_tensor = obs_tensor.cuda()

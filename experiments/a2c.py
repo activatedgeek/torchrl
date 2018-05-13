@@ -1,26 +1,12 @@
 import gym
 import time
 import numpy as np
-import torch
-from copy import deepcopy
 from tensorboardX import SummaryWriter
-from torch.autograd import Variable
 
 from torchrl import EpisodeRunner, MultiEpisodeRunner
 from torchrl.utils import set_seeds
 
 from a2c_learner import BaseA2CLearner
-
-
-class A2CRunner(EpisodeRunner):
-    def act(self, learner: BaseA2CLearner):
-        obs_tensor = torch.from_numpy(self._obs).unsqueeze(0).float()
-        obs_tensor = Variable(obs_tensor, volatile=True)
-        if learner.is_cuda:
-            obs_tensor = obs_tensor.cuda()
-
-        action = learner.act(obs_tensor)
-        return action[0]
 
 
 def train(args, env, agent, runner, logger):
@@ -96,10 +82,7 @@ def main(args):
     if args.cuda:
         agent.cuda()
 
-    runner = MultiEpisodeRunner([
-        lambda: A2CRunner(deepcopy(env), max_steps=args.max_episode_steps)
-        for _ in range(args.num_processes)
-    ])
+    runner = MultiEpisodeRunner(env, max_steps=args.max_episode_steps, n_runners=args.num_processes)
 
     logger = SummaryWriter(args.log_dir)
 

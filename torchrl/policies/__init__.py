@@ -1,17 +1,18 @@
 import numpy as np
 
 
-def epsilon_greedy(action_size, choice, eps=0.1):
+def epsilon_greedy(action_size: int, choices: np.array, eps: float = 0.1):
     """
-    Return the action chosen epsilon-greedily from a set of n actions
-    numbered 0 to n - 1
-
-    :param action_size: Total number of actions, int
-    :param choice: Choice of the action chosen, range [0, n - 1]
-    :param eps: Float value of epsilon, range [0, 1)
-    :return: Action chosen and its probability, range [0, n - 1], [0, 1)
+    Batched epsilon-greedy
+    :param action_size: Total number of actions
+    :param choices: A list of choices
+    :param eps: Value of epsilon
+    :return:
     """
-    distribution = np.ones(action_size, dtype=np.float32) * eps / action_size
-    distribution[choice] += 1.0 - eps
-    action = np.random.choice(np.arange(action_size), p=distribution)
-    return action, distribution[action]
+    distribution = np.ones((len(choices), action_size), dtype=np.float32) * eps / action_size
+    distribution[np.arange(len(choices)), choices] += 1.0 - eps
+    actions = np.array([
+        np.random.choice(np.arange(action_size), p=dist)
+        for dist in distribution
+    ])
+    return np.expand_dims(actions, axis=1)

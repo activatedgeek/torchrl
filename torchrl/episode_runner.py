@@ -1,7 +1,10 @@
-import abc
 import time
 import gym
 import numpy as np
+import torch
+from copy import deepcopy
+from torch.autograd import Variable
+
 from torchrl.learners import BaseLearner
 from torchrl.multi_proc_wrapper import MultiProcWrapper
 
@@ -9,7 +12,7 @@ from torchrl.multi_proc_wrapper import MultiProcWrapper
 DEFAULT_MAX_STEPS = int(1e6)
 
 
-class EpisodeRunner(metaclass=abc.ABCMeta):
+class EpisodeRunner:
     """
     EpisodeRunner is a utility wrapper to run episodes on a single Gym-like environment
     object. Each call to the `run()` method will run one episode for specified
@@ -42,13 +45,19 @@ class EpisodeRunner(metaclass=abc.ABCMeta):
         """
         return self._done
 
-    @abc.abstractmethod
-    def act(self, learner: BaseLearner):
+    def act(self, learner):
         """
         This routine is called from the `run` routine every time an action
         is needed for the environment to step.
         """
-        raise NotImplementedError
+        obs_tensor = torch.from_numpy(self._obs).unsqueeze(0).float()
+        obs_tensor = Variable(obs_tensor, volatile=True)
+        if learner.is_cuda:
+            obs_tensor = obs_tensor.cuda()
+
+        action = learner.act(obs_tensor)
+        # `act` is a batch call but, for a single episode run this is always one action
+        return action[0][0]
 
     def run(self, learner: BaseLearner, steps: int = None, render: bool = False, fps: int = 30, store: bool = False):
         """
@@ -68,6 +77,8 @@ class EpisodeRunner(metaclass=abc.ABCMeta):
             self.env.render()
             time.sleep(1. / fps)
 
+        is_discrete = self.env.action_space.__class__.__name__ == 'Discrete'
+
         obs_history, action_history, reward_history, next_obs_history, done_history = \
             self.init_run_history(self.env.observation_space, self.env.action_space)
 
@@ -77,7 +88,8 @@ class EpisodeRunner(metaclass=abc.ABCMeta):
 
             if store:
                 obs_history = np.append(obs_history, np.expand_dims(self._obs, axis=0), axis=0)
-                action_history = np.append(action_history, np.array([[action]]), axis=0)
+                action = np.array([[action]]) if is_discrete else np.expand_dims(action, axis=0)
+                action_history = np.append(action_history, action, axis=0)
                 reward_history = np.append(reward_history, np.array([[reward]]), axis=0)
                 next_obs_history = np.append(next_obs_history, np.expand_dims(next_obs, axis=0), axis=0)
                 done_history = np.append(done_history, np.array([[int(self._done)]]), axis=0)
@@ -118,6 +130,14 @@ class MultiEpisodeRunner(MultiProcWrapper):
     """
     This class is the parallel version of EpisodeRunner
     """
+
+    def __init__(self, env, max_steps=DEFAULT_MAX_STEPS, n_runners=2, daemon=True, autostart=True):
+        obj_fns =[
+            lambda: EpisodeRunner(deepcopy(env), max_steps=max_steps)
+            for _ in range(n_runners)
+        ]
+        super(MultiEpisodeRunner, self).__init__(obj_fns, daemon=daemon, autostart=autostart)
+
     def reset(self, env_id: int = None):
         self.exec_remote('reset', proc=env_id)
 
