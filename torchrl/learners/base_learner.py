@@ -61,20 +61,22 @@ class BaseLearner(metaclass=abc.ABCMeta):
         """
         pass
 
-    @abc.abstractmethod
+    # @TODO: implement save operations
+    # @abc.abstractmethod
     def save(self, dir):
         """
         Store the agent for future usage
         :param dir: The directory to save arbitrary files to
         :return:
         """
-        raise NotImplementedError
+        pass
 
-    @abc.abstractmethod
+    # @TODO: implement save operations
+    # @abc.abstractmethod
     def load(self, dir):
         """
         Load a pre-trained agent
         :param dir: The directory from a pre-trained agent (must be inverse of save)
         :return:
         """
-        raise NotImplementedError
+        pass

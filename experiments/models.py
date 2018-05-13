@@ -81,3 +81,28 @@ class Critic(nn.Module):
 
     def _init_weights(self):
         nn.init.uniform(self.out[-1].weight, -3e-4, 3e-4)
+
+
+class ACNet(nn.Module):
+    def __init__(self, input_size, output_size):
+        super(ACNet, self).__init__()
+
+        self._input_size = input_size
+        self._output_size = output_size
+
+        self.net = nn.Sequential(
+            nn.Linear(self._input_size, 64),
+            nn.ReLU()
+        )
+
+        self.actor = nn.Sequential(
+            nn.Linear(64, output_size),
+            nn.Softmax(dim=1)
+        )
+        self.critic = nn.Linear(64, 1)
+
+    def forward(self, obs):
+        h_tensor = self.net(obs)
+        value = self.critic(h_tensor)
+        policy = self.actor(h_tensor)
+        return value, policy

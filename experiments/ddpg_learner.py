@@ -34,27 +34,6 @@ class BaseDDPGLearner(BaseLearner):
 
         self.train()
 
-    def cuda(self):
-        self.actor.cuda()
-        self.target_actor.cuda()
-        self.critic.cuda()
-        self.target_critic.cuda()
-        self.is_cuda = True
-
-    def train(self):
-        self.actor.train()
-        self.target_actor.train()
-        self.critic.train()
-        self.target_critic.train()
-        self.training = True
-
-    def eval(self):
-        self.actor.eval()
-        self.target_actor.eval()
-        self.critic.eval()
-        self.target_critic.eval()
-        self.training = False
-
     def act(self, obs, **kwargs):
         return self.actor(obs)
 
@@ -96,10 +75,23 @@ class BaseDDPGLearner(BaseLearner):
     def reset(self):
         self.noise.reset()
 
-    # @TODO: save learner
-    def save(self, dir):
-        pass
+    def cuda(self):
+        self.actor.cuda()
+        self.target_actor.cuda()
+        self.critic.cuda()
+        self.target_critic.cuda()
+        self.is_cuda = True
 
-    # @TODO: load learner
-    def load(self, dir):
-        pass
+    def train(self):
+        self.actor.train()
+        self.target_actor.train()
+        self.critic.train()
+        self.target_critic.train()
+        self.training = True
+
+    def eval(self):
+        self.actor.eval()
+        self.target_actor.eval()
+        self.critic.eval()
+        self.target_critic.eval()
+        self.training = False

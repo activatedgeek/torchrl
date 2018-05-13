@@ -1,4 +1,7 @@
+import abc
 import time
+import gym
+import numpy as np
 from torchrl.learners import BaseLearner
 from torchrl.multi_proc_wrapper import MultiProcWrapper
 
@@ -6,13 +9,13 @@ from torchrl.multi_proc_wrapper import MultiProcWrapper
 DEFAULT_MAX_STEPS = int(1e6)
 
 
-class EpisodeRunner:
+class EpisodeRunner(metaclass=abc.ABCMeta):
     """
     EpisodeRunner is a utility wrapper to run episodes on a single Gym-like environment
     object. Each call to the `run()` method will run one episode for specified
     number of steps. Call `reset()` to reuse the same object again
     """
-    def __init__(self, env, max_steps=DEFAULT_MAX_STEPS):
+    def __init__(self, env: gym.Env, max_steps: int = DEFAULT_MAX_STEPS):
         """
         :param env: Environment with Gym-like API
         :param max_steps: Maximum number of steps per episode (useful for non-episodic environments)
@@ -39,18 +42,15 @@ class EpisodeRunner:
         """
         return self._done
 
-    def act(self, learner):
+    @abc.abstractmethod
+    def act(self, learner: BaseLearner):
         """
         This routine is called from the `run` routine every time an action
-        is needed for the environment to step. This function can be overridden
-        in case the learner returns more than just the actions
-        :param learner: An agent of type BaseLearner
-        :return: Return the action(s) needed by the environment to act
+        is needed for the environment to step.
         """
-        action = learner.act(self._obs)
-        return action
+        raise NotImplementedError
 
-    def run(self, learner, steps=None, render=False, fps=30, store=False):
+    def run(self, learner: BaseLearner, steps: int = None, render: bool = False, fps: int = 30, store: bool = False):
         """
 
         :param learner: An agent of type BaseLearner
@@ -62,31 +62,25 @@ class EpisodeRunner:
         """
         assert not self._done, 'EpisodeRunner has ended. Call .reset() to reuse.'
 
-        assert isinstance(learner, BaseLearner),\
-            '"learner" should inherit from "BaseLearner", found invalid type "{}"'.format(type(learner))
-
         steps = steps or self.max_steps
 
         if render:
             self.env.render()
             time.sleep(1. / fps)
 
-        obs_history = []
-        action_history = []
-        reward_history = []
-        next_obs_history = []
-        done_history = []
+        obs_history, action_history, reward_history, next_obs_history, done_history = \
+            self.init_run_history(self.env.observation_space, self.env.action_space)
 
         while not self._done and steps:
             action = self.act(learner)
-            next_obs, reward, self._done, info = self.env.step(action)
+            next_obs, reward, self._done, _ = self.env.step(action)
 
             if store:
-                obs_history.append(self._obs)
-                action_history.append(action)
-                reward_history.append(reward)
-                next_obs_history.append(next_obs)
-                done_history.append(int(self._done))
+                obs_history = np.append(obs_history, np.expand_dims(self._obs, axis=0), axis=0)
+                action_history = np.append(action_history, np.array([[action]]), axis=0)
+                reward_history = np.append(reward_history, np.array([[reward]]), axis=0)
+                next_obs_history = np.append(next_obs_history, np.expand_dims(next_obs, axis=0), axis=0)
+                done_history = np.append(done_history, np.array([[int(self._done)]]), axis=0)
 
             self._obs = next_obs
             steps -= 1
@@ -101,12 +95,30 @@ class EpisodeRunner:
     def stop(self):
         self.env.close()
 
+    @staticmethod
+    def init_run_history(observation_space: gym.Space, action_space: gym.Space):
+        is_discrete = action_space.__class__.__name__ == 'Discrete'
+
+        obs_history = np.empty((0, *observation_space.shape), dtype=np.float)
+        action_history = np.empty((0, *((1,) if is_discrete else action_space.shape)),
+                                  dtype=np.int if is_discrete else np.float)
+        reward_history = np.empty((0, 1), dtype=np.float)
+        next_obs_history = np.empty_like(obs_history)
+        done_history = np.empty((0, 1), dtype=np.int)
+
+        return obs_history, action_history, reward_history, next_obs_history, done_history
+
+    @staticmethod
+    def merge_histories(observation_space: gym.Space, action_space: gym.Space, *sources: tuple) -> tuple:
+        target = EpisodeRunner.init_run_history(observation_space, action_space)
+        return tuple([np.concatenate((tgt, *src), axis=0) for tgt, *src in zip(target, *sources)])
+
 
 class MultiEpisodeRunner(MultiProcWrapper):
     """
     This class is the parallel version of EpisodeRunner
     """
-    def reset(self, env_id=None):
+    def reset(self, env_id: int = None):
         self.exec_remote('reset', proc=env_id)
 
     def is_done(self):

@@ -35,6 +35,8 @@ class BaseDQNLearner(BaseLearner):
         self._steps = 0
         self.eps = eps_max
 
+        self.train()
+
     def act(self, obs, **kwargs):
         return self.q_net(obs)
 
@@ -85,11 +87,3 @@ class BaseDQNLearner(BaseLearner):
         self.q_net.eval()
         self.target_q_net.eval()
         self.training = False
-
-    # @TODO: implement save
-    def save(self, dir):
-        pass
-
-    # @TODO: implement load
-    def load(self, dir):
-        pass
