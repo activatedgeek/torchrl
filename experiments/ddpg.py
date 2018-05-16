@@ -1,15 +1,14 @@
-import gym
 import time
 import numpy as np
 from tensorboardX import SummaryWriter
 
 from torchrl import EpisodeRunner, MultiEpisodeRunner, CPUReplayBuffer
-from torchrl.utils import set_seeds, OUNoise
+from torchrl.utils import set_seeds, OUNoise, get_gym_spaces
 
 from ddpg_learner import BaseDDPGLearner
 
 
-def train(args, env, agent, runner, logger, buffer):
+def train(args, agent, runner, logger, buffer):
     n_epochs = args.num_total_steps // args.rollout_steps // args.num_processes
     n_episodes = 0
     n_timesteps = 0
@@ -30,7 +29,7 @@ def train(args, env, agent, runner, logger, buffer):
         rollout_duration = time.time() - rollout_start
 
         # Populate the buffer
-        batch_history = EpisodeRunner.merge_histories(env.observation_space, env.action_space, *history_list)
+        batch_history = EpisodeRunner.merge_histories(agent.observation_space, agent.action_space, *history_list)
         transitions = list(zip(*batch_history))
         buffer.extend(transitions)
 
@@ -80,15 +79,14 @@ def train(args, env, agent, runner, logger, buffer):
 def main(args):
     set_seeds(args.seed)
 
-    env = gym.make(args.env)
-    env.seed(args.seed)
+    observation_space, action_space = get_gym_spaces(args.env)
 
     agent = BaseDDPGLearner(
-        env.observation_space,
-        env.action_space,
+        observation_space,
+        action_space,
         OUNoise(
-            mean=args.ou_mu * np.ones(env.action_space.shape[0]),
-            sigma=args.ou_sigma * np.ones(env.action_space.shape[0]),
+            mean=args.ou_mu * np.ones(action_space.shape[0]),
+            sigma=args.ou_sigma * np.ones(action_space.shape[0]),
             theta=args.ou_theta
         ),
         actor_lr=args.actor_lr,
@@ -98,14 +96,14 @@ def main(args):
     if args.cuda:
         agent.cuda()
 
-    runner = MultiEpisodeRunner(env, max_steps=args.max_episode_steps, n_runners=args.num_processes)
+    runner = MultiEpisodeRunner(args.env, max_steps=args.max_episode_steps,
+                                n_runners=args.num_processes, base_seed=args.seed)
 
     buffer = CPUReplayBuffer(args.buffer_size)
 
     logger = SummaryWriter(args.log_dir)
 
-    train(args, env, agent, runner, logger, buffer)
+    train(args, agent, runner, logger, buffer)
 
     runner.stop()
-    env.close()
     logger.close()

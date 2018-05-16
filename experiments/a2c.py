@@ -1,15 +1,14 @@
-import gym
 import time
 import numpy as np
 from tensorboardX import SummaryWriter
 
 from torchrl import EpisodeRunner, MultiEpisodeRunner
-from torchrl.utils import set_seeds
+from torchrl.utils import set_seeds, get_gym_spaces
 
 from a2c_learner import BaseA2CLearner
 
 
-def train(args, env, agent, runner, logger):
+def train(args, agent, runner, logger):
     n_epochs = args.num_total_steps // args.rollout_steps // args.num_processes
     n_episodes = 0
     n_timesteps = 0
@@ -30,7 +29,7 @@ def train(args, env, agent, runner, logger):
         rollout_duration = time.time() - rollout_start
 
         # Merge histories across multiple trajectories
-        batch_history = EpisodeRunner.merge_histories(env.observation_space, env.action_space, *history_list)
+        batch_history = EpisodeRunner.merge_histories(agent.observation_space, agent.action_space, *history_list)
 
         # Train the agent
         agent.learn(*batch_history)
@@ -71,23 +70,22 @@ def train(args, env, agent, runner, logger):
 def main(args):
     set_seeds(args.seed)
 
-    env = gym.make(args.env)
-    env.seed(args.seed)
+    observation_space, action_space = get_gym_spaces(args.env)
 
     agent = BaseA2CLearner(
-        env.observation_space,
-        env.action_space,
+        observation_space,
+        action_space,
         lr=args.actor_lr,
         gamma=args.gamma)
     if args.cuda:
         agent.cuda()
 
-    runner = MultiEpisodeRunner(env, max_steps=args.max_episode_steps, n_runners=args.num_processes)
+    runner = MultiEpisodeRunner(args.env, max_steps=args.max_episode_steps,
+                                n_runners=args.num_processes, base_seed=args.seed)
 
     logger = SummaryWriter(args.log_dir)
 
-    train(args, env, agent, runner, logger)
+    train(args, agent, runner, logger)
 
     runner.stop()
-    env.close()
     logger.close()

@@ -4,7 +4,7 @@ import time
 from tensorboardX import SummaryWriter
 
 from torchrl import EpisodeRunner, MultiEpisodeRunner, CPUReplayBuffer
-from torchrl.utils import set_seeds
+from torchrl.utils import set_seeds, get_gym_spaces
 
 from dqn_learner import BaseDQNLearner
 
@@ -18,7 +18,7 @@ class CartPoleDQNLearner(BaseDQNLearner):
         return super(CartPoleDQNLearner, self).learn(obs, action, reward, next_obs, done)
 
 
-def train(args, env, agent, runner, logger, buffer):
+def train(args, agent, runner, logger, buffer):
     n_epochs = args.num_total_steps // args.rollout_steps // args.num_processes
     n_episodes = 0
     n_timesteps = 0
@@ -39,7 +39,7 @@ def train(args, env, agent, runner, logger, buffer):
         rollout_duration = time.time() - rollout_start
 
         # Populate the buffer
-        batch_history = EpisodeRunner.merge_histories(env.observation_space, env.action_space, *history_list)
+        batch_history = EpisodeRunner.merge_histories(agent.observation_space, agent.action_space, *history_list)
         transitions = list(zip(*batch_history))
         buffer.extend(transitions)
 
@@ -88,26 +88,25 @@ def train(args, env, agent, runner, logger, buffer):
 def main(args):
     set_seeds(args.seed)
 
-    env = gym.make(args.env)
-    env.seed(args.seed)
+    observation_space, action_space = get_gym_spaces(args.env)
 
     agent = CartPoleDQNLearner(
-        env.observation_space,
-        env.action_space,
+        observation_space,
+        action_space,
         lr=args.actor_lr,
         gamma=args.gamma,
         target_update_interval=args.target_update_interval)
     if args.cuda:
         agent.cuda()
 
-    runner = MultiEpisodeRunner(env, max_steps=args.max_episode_steps, n_runners=args.num_processes)
+    runner = MultiEpisodeRunner(args.env, max_steps=args.max_episode_steps,
+                                n_runners=args.num_processes, base_seed=args.seed)
 
     buffer = CPUReplayBuffer(args.buffer_size)
 
     logger = SummaryWriter(args.log_dir)
 
-    train(args, env, agent, runner, logger, buffer)
+    train(args, agent, runner, logger, buffer)
 
     runner.stop()
-    env.close()
     logger.close()

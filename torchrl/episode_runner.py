@@ -2,7 +2,7 @@ import time
 import gym
 import numpy as np
 import torch
-from copy import deepcopy
+import functools
 from torch.autograd import Variable
 
 from torchrl.learners import BaseLearner
@@ -126,15 +126,22 @@ class EpisodeRunner:
         return tuple([np.concatenate((tgt, *src), axis=0) for tgt, *src in zip(target, *sources)])
 
 
+def make_runner(env_id: str, seed: int, max_steps: int = DEFAULT_MAX_STEPS):
+    env = gym.make(env_id)
+    env.seed(seed)
+    return EpisodeRunner(env, max_steps=max_steps)
+
+
 class MultiEpisodeRunner(MultiProcWrapper):
     """
     This class is the parallel version of EpisodeRunner
     """
 
-    def __init__(self, env, max_steps=DEFAULT_MAX_STEPS, n_runners=2, daemon=True, autostart=True):
+    def __init__(self, env_id: str, max_steps: int = DEFAULT_MAX_STEPS, n_runners=2, base_seed: int = 0,
+                 daemon=True, autostart=True):
         obj_fns =[
-            lambda: EpisodeRunner(deepcopy(env), max_steps=max_steps)
-            for _ in range(n_runners)
+            functools.partial(make_runner, env_id, base_seed + rank, max_steps=max_steps)
+            for rank in range(1, n_runners + 1)
         ]
         super(MultiEpisodeRunner, self).__init__(obj_fns, daemon=daemon, autostart=autostart)
 

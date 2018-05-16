@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import random
+import gym
 
 
 def set_seeds(seed):
@@ -14,6 +15,14 @@ def set_seeds(seed):
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
+
+
+def get_gym_spaces(env_id: str):
+    env = gym.make(env_id)
+    observation_space = env.observation_space
+    action_space = env.action_space
+    env.close()
+    return observation_space, action_space
 
 
 def polyak_average(source, target, tau=1e-3):
