@@ -17,7 +17,7 @@
 
 Some implementations using the `torchrl` framework architecture.
 
-* A2C
+* [A2C](./experiments/a2c.py)
 * [DDPG](./experiments/ddpg.py)
 * [DQN](./experiments/dqn.py)
 * PPO

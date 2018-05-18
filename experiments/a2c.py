@@ -8,7 +8,7 @@ from torchrl.utils import set_seeds, get_gym_spaces
 from a2c_learner import BaseA2CLearner
 
 
-def train(args, agent, runner, logger):
+def train(args, agent: BaseA2CLearner, runner: MultiEpisodeRunner, logger: SummaryWriter):
     n_epochs = args.num_total_steps // args.rollout_steps // args.num_processes
     n_episodes = 0
     n_timesteps = 0
@@ -30,9 +30,10 @@ def train(args, agent, runner, logger):
 
         # Merge histories across multiple trajectories
         batch_history = EpisodeRunner.merge_histories(agent.observation_space, agent.action_space, *history_list)
+        returns = np.concatenate([agent.compute_returns(*history) for history in history_list], axis=0)
 
         # Train the agent
-        agent.learn(*batch_history)
+        actor_loss, critic_loss, entropy_loss = agent.learn(*batch_history, returns)
 
         # Stats Collection for this epoch
         epoch_rollout_steps = 0
@@ -76,7 +77,10 @@ def main(args):
         observation_space,
         action_space,
         lr=args.actor_lr,
-        gamma=args.gamma)
+        gamma=args.gamma,
+        lmbda=args.lmbda,
+        beta=args.beta,
+        clip_grad_norm=args.clip_grad_norm)
     if args.cuda:
         agent.cuda()
 

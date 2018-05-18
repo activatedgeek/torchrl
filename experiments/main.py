@@ -37,12 +37,12 @@ def parse_ddpg(parser):
 
 
 def parse_ppo(parser):
-    parser.add_argument('--lambda', type=float, metavar='', default=1e-2,
+    parser.add_argument('--lambda', type=float, metavar='', dest='lmbda', default=1e-2,
                         help='Parameter for generalized advantage estimate')
 
 
 def parse_pg(parser):
-    parser.add_argument('--beta', type=float, metavar='', default=1e-2, help='KL Loss coefficient')
+    parser.add_argument('--beta', type=float, metavar='', default=1e-2, help='Entropy Loss coefficient')
     parser.add_argument('--actor-lr', type=float, metavar='', default=1e-4, help='Learning rate for actor')
     parser.add_argument('--critic-lr', type=float, metavar='', default=1e-3, help='Learning rate for critic')
     parser.add_argument('--clip-grad-norm', type=float, metavar='', default=10.0,
