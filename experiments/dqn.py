@@ -1,4 +1,3 @@
-import gym
 import numpy as np
 import time
 from tensorboardX import SummaryWriter
@@ -18,7 +17,7 @@ class CartPoleDQNLearner(BaseDQNLearner):
         return super(CartPoleDQNLearner, self).learn(obs, action, reward, next_obs, done)
 
 
-def train(args, agent, runner, logger, buffer):
+def train(args, agent: CartPoleDQNLearner, runner: MultiEpisodeRunner, logger: SummaryWriter, buffer: CPUReplayBuffer):
     n_epochs = args.num_total_steps // args.rollout_steps // args.num_processes
     n_episodes = 0
     n_timesteps = 0
@@ -33,7 +32,7 @@ def train(args, agent, runner, logger, buffer):
         # Generate rollouts
         rollout_start = time.time()
 
-        history_list = runner.run(agent, steps=args.rollout_steps, store=True)
+        history_list = runner.collect(agent, steps=args.rollout_steps, store=True)
         done_list = runner.is_done()
 
         rollout_duration = time.time() - rollout_start

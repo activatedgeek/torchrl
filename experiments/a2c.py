@@ -23,7 +23,7 @@ def train(args, agent: BaseA2CLearner, runner: MultiEpisodeRunner, logger: Summa
         # Generate rollouts
         rollout_start = time.time()
 
-        history_list = runner.run(agent, steps=args.rollout_steps, store=True)
+        history_list = runner.collect(agent, steps=args.rollout_steps, store=True)
         done_list = runner.is_done()
 
         rollout_duration = time.time() - rollout_start

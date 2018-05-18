@@ -59,7 +59,7 @@ class EpisodeRunner:
         # `act` is a batch call but, for a single episode run this is always one action
         return action[0][0]
 
-    def run(self, learner: BaseLearner, steps: int = None, render: bool = False, fps: int = 30, store: bool = False):
+    def collect(self, learner: BaseLearner, steps: int = None, render: bool = False, fps: int = 30, store: bool = False):
         """
 
         :param learner: An agent of type BaseLearner
@@ -151,5 +151,5 @@ class MultiEpisodeRunner(MultiProcWrapper):
     def is_done(self):
         return self.exec_remote('is_done')
 
-    def run(self, *args, **kwargs):
-        return self.exec_remote('run', args=args, kwargs=kwargs)
+    def collect(self, *args, **kwargs):
+        return self.exec_remote('collect', args=args, kwargs=kwargs)

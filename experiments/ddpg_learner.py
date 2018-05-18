@@ -1,8 +1,8 @@
 from copy import deepcopy
 import torch
 import numpy as np
+import torch.nn.functional as F
 from torch.optim import Adam
-import torch.nn as nn
 from torch.autograd import Variable
 
 from torchrl import BaseLearner
@@ -27,8 +27,6 @@ class BaseDDPGLearner(BaseLearner):
         self.target_critic = deepcopy(self.critic)
         self.critic_optim = Adam(self.critic.parameters(), lr=critic_lr)
 
-        self.mse_loss = nn.MSELoss()
-
         self.gamma = gamma
         self.tau = tau
         self.noise = noise
@@ -43,10 +41,10 @@ class BaseDDPGLearner(BaseLearner):
         return np.expand_dims(action, axis=1)
 
     def learn(self, obs, action, reward, next_obs, done, **kwargs):
-        obs_tensor = Variable(torch.from_numpy(obs).float(), requires_grad=True)
-        action_tensor = Variable(torch.from_numpy(action).float(), requires_grad=True)
+        obs_tensor = Variable(torch.from_numpy(obs).float())
+        action_tensor = Variable(torch.from_numpy(action).float())
         reward_tensor = Variable(torch.from_numpy(reward).float())
-        next_obs_tensor = Variable(torch.from_numpy(next_obs).float(), volatile=True)
+        next_obs_tensor = Variable(torch.from_numpy(next_obs).float())
 
         if self.is_cuda:
             obs_tensor = obs_tensor.cuda()
@@ -58,13 +56,13 @@ class BaseDDPGLearner(BaseLearner):
 
         target_q = reward_tensor + self.gamma * self.target_critic(next_obs_tensor, self.target_actor(next_obs_tensor))
 
-        critic_loss = self.mse_loss(current_q, target_q)
+        critic_loss = F.mse_loss(current_q, target_q)
 
         critic_loss.backward()
         self.critic_optim.step()
         self.critic_optim.zero_grad()
 
-        actor_loss = self.critic(obs_tensor, self.actor(obs_tensor)).mean()
+        actor_loss = - self.critic(obs_tensor, self.actor(obs_tensor)).mean()
 
         actor_loss.backward()
         self.actor_optim.step()

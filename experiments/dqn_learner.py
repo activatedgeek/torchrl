@@ -1,7 +1,7 @@
 from copy import deepcopy
 import numpy as np
 import torch
-import torch.nn as nn
+import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.optim import Adam
 
@@ -24,8 +24,6 @@ class BaseDQNLearner(BaseLearner):
         self.q_net = QNet(observation_space.shape[0], action_space.n)
         self.target_q_net = deepcopy(self.q_net)
         self.q_net_optim = Adam(self.q_net.parameters(), lr=lr)
-
-        self.mse_loss = nn.MSELoss()
 
         self.gamma = gamma
         self.eps_max = eps_max
@@ -60,7 +58,7 @@ class BaseDQNLearner(BaseLearner):
         max_next_q_values = self.target_q_net(next_obs_tensor).max(1)[0].unsqueeze(1)
         expected_q_values = reward_tensor + self.gamma * max_next_q_values
 
-        loss = self.mse_loss(current_q_values, expected_q_values)
+        loss = F.mse_loss(current_q_values, expected_q_values)
 
         loss.backward()
         self.q_net_optim.step()
