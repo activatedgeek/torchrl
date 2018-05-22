@@ -90,8 +90,8 @@ class BaseA2CLearner(BaseLearner):
         loss.backward()
         torch.nn.utils.clip_grad_norm(self.ac_net.parameters(), self.clip_grad_norm)
 
-        self.ac_net_optim.zero_grad()
         self.ac_net_optim.step()
+        self.ac_net_optim.zero_grad()
 
         return actor_loss.detach().cpu().data.numpy(), critic_loss.detach().cpu().data.numpy(), \
                entropy_loss.detach().cpu().data.numpy()
