@@ -60,6 +60,10 @@ def train(args, agent: BaseA2CLearner, runner: MultiEpisodeRunner, logger: Summa
 
         n_timesteps += epoch_rollout_steps
 
+        logger.add_scalar('actor loss', actor_loss, global_step=epoch)
+        logger.add_scalar('critic loss', critic_loss, global_step=epoch)
+        logger.add_scalar('entropy loss', entropy_loss, global_step=epoch)
+
         logger.add_scalar('total timesteps', n_timesteps, global_step=epoch)
         logger.add_scalar('steps per sec', epoch_rollout_steps / rollout_duration, global_step=epoch)
 
