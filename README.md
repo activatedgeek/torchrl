@@ -13,11 +13,15 @@
 
 * Scalability
 
-## Experimental Implementations
+## Implementations
 
 Some implementations using the `torchrl` framework architecture.
 
 * [A2C](./experiments/a2c.py)
-* [DDPG](./experiments/ddpg.py)
 * [DQN](./experiments/dqn.py)
-* PPO
+* [DDPG](./experiments/ddpg.py) (Experimental)
+* PPO (TODO)
+
+# Experiments
+
+See [experiments](./experiments.md) for a temporary list.

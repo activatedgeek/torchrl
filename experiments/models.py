@@ -84,25 +84,27 @@ class Critic(nn.Module):
 
 
 class ACNet(nn.Module):
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, output_size, hidden_size):
         super(ACNet, self).__init__()
 
         self._input_size = input_size
         self._output_size = output_size
+        self._hidden_size = hidden_size
 
-        self.net = nn.Sequential(
-            nn.Linear(self._input_size, 64),
-            nn.ReLU()
+        self.critic = nn.Sequential(
+            nn.Linear(self._input_size, self._hidden_size),
+            nn.ReLU(),
+            nn.Linear(self._hidden_size, 1)
         )
 
         self.actor = nn.Sequential(
-            nn.Linear(64, output_size),
+            nn.Linear(self._input_size, self._hidden_size),
+            nn.ReLU(),
+            nn.Linear(self._hidden_size, self._output_size),
             nn.Softmax(dim=1)
         )
-        self.critic = nn.Linear(64, 1)
 
     def forward(self, obs):
-        h_tensor = self.net(obs)
-        value = self.critic(h_tensor)
-        policy = self.actor(h_tensor)
+        value = self.critic(obs)
+        policy = self.actor(obs)
         return value, policy

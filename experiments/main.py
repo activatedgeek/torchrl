@@ -9,16 +9,18 @@ def parse_common(parser):
     parser.add_argument('--algo', type=str, required=True, help='Algorithm to run')
     parser.add_argument('--num-processes', type=int, metavar='', default=1,
                         help='Number of parallel trajectories to run')
-    parser.add_argument('--seed', type=int, metavar='', default=0, help='Random Seed')
+    parser.add_argument('--seed', type=int, metavar='', default=None, help='Random Seed')
     parser.add_argument('--cuda', dest='cuda', action='store_true', help='Enable CUDA')
     parser.add_argument('--no-cuda', dest='cuda', action='store_false', help='Disable CUDA')
     parser.set_defaults(cuda=True)
     parser.add_argument('--log-dir', type=str, metavar='', default='log', help='Directory to store logs')
     parser.add_argument('--save-dir', type=str, metavar='', help='Directory to store models')
     parser.add_argument('--save-interval', type=int, metavar='', default=100, help='Save interval for the model')
+    parser.add_argument('--eval-interval', type=int, metavar='', default=100, help='Eval interval for the model')
+    parser.add_argument('--num-eval', type=int, metavar='', default=10, help='Number of model evaluations')
 
     # General training arguments
-    parser.add_argument('--gamma', type=float, metavar='', default=0.995, help='Discount factor')
+    parser.add_argument('--gamma', type=float, metavar='', default=0.99, help='Discount factor')
     parser.add_argument('--rollout-steps', type=int, metavar='', default=100, help='Number of rollout steps')
     parser.add_argument('--max-episode-steps', type=int, metavar='', default=2500,
                         help='Maximum number of episode steps')
@@ -42,7 +44,8 @@ def parse_ppo(parser):
 
 
 def parse_pg(parser):
-    parser.add_argument('--beta', type=float, metavar='', default=1e-2, help='Entropy Loss coefficient')
+    parser.add_argument('--alpha', type=float, metavar='', default=0.5, help='Critic Loss coefficient')
+    parser.add_argument('--beta', type=float, metavar='', default=1e-3, help='Entropy Loss coefficient')
     parser.add_argument('--actor-lr', type=float, metavar='', default=1e-4, help='Learning rate for actor')
     parser.add_argument('--critic-lr', type=float, metavar='', default=1e-3, help='Learning rate for critic')
     parser.add_argument('--clip-grad-norm', type=float, metavar='', default=10.0,

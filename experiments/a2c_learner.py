@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from torch.optim import RMSprop
+from torch.optim import Adam
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
@@ -14,17 +14,17 @@ class BaseA2CLearner(BaseLearner):
                  lr=1e-3,
                  gamma=0.99,
                  lmbda=0.01,
-                 beta=1.0,
-                 clip_grad_norm=10.0):
+                 alpha=0.5,
+                 beta=1.0):
         super(BaseA2CLearner, self).__init__(observation_space, action_space)
 
-        self.ac_net = ACNet(observation_space.shape[0], action_space.n)
-        self.ac_net_optim = RMSprop(self.ac_net.parameters(), lr=lr)
+        self.ac_net = ACNet(observation_space.shape[0], action_space.n, 256)
+        self.ac_net_optim = Adam(self.ac_net.parameters(), lr=lr)
 
         self.gamma = gamma
         self.lmbda = lmbda
+        self.alpha = alpha
         self.beta = beta
-        self.clip_grad_norm = clip_grad_norm
 
         self.train()
 
@@ -85,16 +85,14 @@ class BaseA2CLearner(BaseLearner):
 
         entropy_loss = - (prob * prob.log()).sum(dim=1).mean()
 
-        loss = actor_loss + critic_loss + self.beta * entropy_loss
+        loss = actor_loss + self.alpha * critic_loss + self.beta * entropy_loss
 
-        loss.backward()
-        torch.nn.utils.clip_grad_norm(self.ac_net.parameters(), self.clip_grad_norm)
-
-        self.ac_net_optim.step()
         self.ac_net_optim.zero_grad()
+        loss.backward()
+        self.ac_net_optim.step()
 
         return actor_loss.detach().cpu().data.numpy(), critic_loss.detach().cpu().data.numpy(), \
-               entropy_loss.detach().cpu().data.numpy()
+            entropy_loss.detach().cpu().data.numpy()
 
     def cuda(self):
         self.ac_net.cuda()

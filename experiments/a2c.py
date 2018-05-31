@@ -3,7 +3,7 @@ import numpy as np
 from tensorboardX import SummaryWriter
 
 from torchrl import EpisodeRunner, MultiEpisodeRunner
-from torchrl.utils import set_seeds, get_gym_spaces
+from torchrl.utils import set_seeds, get_gym_spaces, eval_gym_env
 
 from a2c_learner import BaseA2CLearner
 
@@ -71,6 +71,9 @@ def train(args, agent: BaseA2CLearner, runner: MultiEpisodeRunner, logger: Summa
         if args.save_dir and epoch % args.save_interval == 0:
             agent.save(args.save_dir)
 
+        if epoch % args.eval_interval == 0:
+            print('Avg. Reward at Epoch {}: {}'.format(epoch, eval_gym_env(args, agent)))
+
 
 def main(args):
     set_seeds(args.seed)
@@ -83,8 +86,8 @@ def main(args):
         lr=args.actor_lr,
         gamma=args.gamma,
         lmbda=args.lmbda,
-        beta=args.beta,
-        clip_grad_norm=args.clip_grad_norm)
+        alpha=args.alpha,
+        beta=args.beta)
     if args.cuda:
         agent.cuda()
 
