@@ -126,9 +126,10 @@ class EpisodeRunner:
         return tuple([np.concatenate((tgt, *src), axis=0) for tgt, *src in zip(target, *sources)])
 
 
-def make_runner(env_id: str, seed: int, max_steps: int = DEFAULT_MAX_STEPS):
+def make_runner(env_id: str, seed: int = None, max_steps: int = DEFAULT_MAX_STEPS):
     env = gym.make(env_id)
-    env.seed(seed)
+    if seed is not None:
+        env.seed(seed)
     return EpisodeRunner(env, max_steps=max_steps)
 
 
@@ -140,7 +141,8 @@ class MultiEpisodeRunner(MultiProcWrapper):
     def __init__(self, env_id: str, max_steps: int = DEFAULT_MAX_STEPS, n_runners=2, base_seed: int = 0,
                  daemon=True, autostart=True):
         obj_fns =[
-            functools.partial(make_runner, env_id, base_seed + rank, max_steps=max_steps)
+            functools.partial(make_runner, env_id,
+                              None if base_seed is None else base_seed + rank, max_steps=max_steps)
             for rank in range(1, n_runners + 1)
         ]
         super(MultiEpisodeRunner, self).__init__(obj_fns, daemon=daemon, autostart=autostart)
