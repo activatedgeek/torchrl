@@ -6,6 +6,15 @@ and should be easily doable given the flexibility of the program.
 
 All Tensorboard logs are written to `experiments/log` by default.
 
+## DQN on CartPole-v1
+
+```
+--env CartPole-v1 --algo dqn --seed 1 --rollout-steps 1 --num-processes 1 --actor-lr 0.0001 --gamma 0.8 \ 
+--target-update-interval 5 --eps-min 0.1 --buffer-size 5000 --batch-size 64 --num-total-steps 12000 \
+--eval-interval 500
+```
+
+
 ## A2C on CartPole-v0
 
 ```

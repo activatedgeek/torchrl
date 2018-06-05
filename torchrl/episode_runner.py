@@ -30,6 +30,9 @@ class EpisodeRunner:
         self._obs = None
         self._done = False
 
+        # Stats
+        self._rollout_duration = 0.0
+
         self.reset()
 
     def reset(self):
@@ -38,6 +41,8 @@ class EpisodeRunner:
         """
         self._obs = self.env.reset()
         self._done = False
+
+        self._rollout_duration = 0.0
 
     def is_done(self):
         """
@@ -82,6 +87,8 @@ class EpisodeRunner:
         obs_history, action_history, reward_history, next_obs_history, done_history = \
             self.init_run_history(self.env.observation_space, self.env.action_space)
 
+        rollout_start = time.time()
+
         while not self._done and steps:
             action = self.act(learner)
             next_obs, reward, self._done, _ = self.env.step(action)
@@ -101,11 +108,18 @@ class EpisodeRunner:
                 self.env.render()
                 time.sleep(1. / fps)
 
+        self._rollout_duration = time.time() - rollout_start
+
         if store:
             return obs_history, action_history, reward_history, next_obs_history, done_history
 
     def stop(self):
         self.env.close()
+
+    def get_stats(self) -> dict:
+        return {
+            'duration': self._rollout_duration,
+        }
 
     @staticmethod
     def init_run_history(observation_space: gym.Space, action_space: gym.Space):
@@ -155,3 +169,6 @@ class MultiEpisodeRunner(MultiProcWrapper):
 
     def collect(self, *args, **kwargs):
         return self.exec_remote('collect', args=args, kwargs=kwargs)
+
+    def get_stats(self):
+        return self.exec_remote('get_stats')

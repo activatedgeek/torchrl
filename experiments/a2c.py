@@ -1,4 +1,3 @@
-import time
 import numpy as np
 from tensorboardX import SummaryWriter
 
@@ -21,12 +20,8 @@ def train(args, agent: BaseA2CLearner, runner: MultiEpisodeRunner, logger: Summa
 
     for epoch in range(1, n_epochs + 1):
         # Generate rollouts
-        rollout_start = time.time()
-
         history_list = runner.collect(agent, steps=args.rollout_steps, store=True)
         done_list = runner.is_done()
-
-        rollout_duration = time.time() - rollout_start
 
         # Merge histories across multiple trajectories
         batch_history = EpisodeRunner.merge_histories(agent.observation_space, agent.action_space, *history_list)
@@ -59,6 +54,8 @@ def train(args, agent: BaseA2CLearner, runner: MultiEpisodeRunner, logger: Summa
                 agent.reset()
 
         n_timesteps += epoch_rollout_steps
+
+        rollout_duration = np.average(list(map(lambda x: x['duration'], runner.get_stats())))
 
         logger.add_scalar('actor loss', actor_loss, global_step=epoch)
         logger.add_scalar('critic loss', critic_loss, global_step=epoch)

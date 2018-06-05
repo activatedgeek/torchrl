@@ -1,9 +1,8 @@
 import numpy as np
-import time
 from tensorboardX import SummaryWriter
 
 from torchrl import EpisodeRunner, MultiEpisodeRunner, CPUReplayBuffer
-from torchrl.utils import set_seeds, get_gym_spaces
+from torchrl.utils import set_seeds, get_gym_spaces, eval_gym_env
 
 from dqn_learner import BaseDQNLearner
 
@@ -30,12 +29,8 @@ def train(args, agent: CartPoleDQNLearner, runner: MultiEpisodeRunner, logger: S
 
     for epoch in range(1, n_epochs + 1):
         # Generate rollouts
-        rollout_start = time.time()
-
         history_list = runner.collect(agent, steps=args.rollout_steps, store=True)
         done_list = runner.is_done()
-
-        rollout_duration = time.time() - rollout_start
 
         # Populate the buffer
         batch_history = EpisodeRunner.merge_histories(agent.observation_space, agent.action_space, *history_list)
@@ -75,6 +70,7 @@ def train(args, agent: CartPoleDQNLearner, runner: MultiEpisodeRunner, logger: S
                 agent.reset()
 
         n_timesteps += epoch_rollout_steps
+        rollout_duration = np.average(list(map(lambda x: x['duration'], runner.get_stats())))
 
         logger.add_scalar('total timesteps', n_timesteps, global_step=epoch)
         logger.add_scalar('steps per sec', epoch_rollout_steps / rollout_duration, global_step=epoch)
@@ -82,6 +78,9 @@ def train(args, agent: CartPoleDQNLearner, runner: MultiEpisodeRunner, logger: S
         # Save Agent
         if args.save_dir and epoch % args.save_interval == 0:
             agent.save(args.save_dir)
+
+        if epoch % args.eval_interval == 0:
+            print('Avg. Reward at Epoch {}: {}'.format(epoch, eval_gym_env(args, agent)))
 
 
 def main(args):
