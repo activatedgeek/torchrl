@@ -13,7 +13,7 @@ class BaseA2CLearner(BaseLearner):
     def __init__(self, observation_space, action_space,
                  lr=1e-3,
                  gamma=0.99,
-                 lmbda=0.01,
+                 lmbda=1.0,
                  alpha=0.5,
                  beta=1.0):
         super(BaseA2CLearner, self).__init__(observation_space, action_space)

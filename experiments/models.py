@@ -106,3 +106,40 @@ class A2CNet(nn.Module):
         value = self.critic(obs)
         policy = self.actor(obs)
         return value, policy
+
+
+class ActorCriticNet(nn.Module):
+    def __init__(self, input_size, output_size, hidden_size, std=0.0):
+        super(ActorCriticNet, self).__init__()
+
+        self._input_size = input_size
+        self._output_size = output_size
+        self._hidden_size = hidden_size
+
+        self.critic = nn.Sequential(
+            nn.Linear(self._input_size, self._hidden_size),
+            nn.ReLU(),
+            nn.Linear(self._hidden_size, 1)
+        )
+
+        self.actor = nn.Sequential(
+            nn.Linear(self._input_size, self._hidden_size),
+            nn.ReLU(),
+            nn.Linear(self._hidden_size, self._output_size)
+        )
+
+        self.log_std = nn.Parameter(torch.ones(1, self._output_size) * std)
+
+        self.apply(self.init_weights)
+
+    def forward(self, obs):
+        value = self.critic(obs)
+        mean = self.actor(obs)
+        std = self.log_std.exp().expand_as(mean)
+        return value, mean, std
+
+    @staticmethod
+    def init_weights(module):
+        if isinstance(module, nn.Linear):
+            nn.init.normal(module.weight, mean=0., std=0.1)
+            nn.init.constant(module.bias, 0.1)

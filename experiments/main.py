@@ -39,8 +39,12 @@ def parse_ddpg(parser):
 
 
 def parse_ppo(parser):
-    parser.add_argument('--lambda', type=float, metavar='', dest='lmbda', default=1e-2,
+    parser.add_argument('--lambda', type=float, metavar='', dest='lmbda', default=1.0,
                         help='Parameter for generalized advantage estimate')
+    parser.add_argument('--clip-ratio', type=float, metavar='', default=0.2,
+                        help='Ratio clipping parameter for surrogate loss, 1.0 +/- param')
+    parser.add_argument('--ppo-epochs', type=int, metavar='', default=5,
+                        help='Number of epochs to train PPO')
 
 
 def parse_pg(parser):
