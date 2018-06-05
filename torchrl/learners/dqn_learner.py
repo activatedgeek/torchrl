@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.optim import Adam
 
-from torchrl import BaseLearner
+from torchrl.learners import BaseLearner
 from torchrl.policies import epsilon_greedy
 
 from models import QNet

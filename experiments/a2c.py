@@ -3,8 +3,7 @@ from tensorboardX import SummaryWriter
 
 from torchrl import EpisodeRunner, MultiEpisodeRunner
 from torchrl.utils import set_seeds, get_gym_spaces, eval_gym_env
-
-from a2c_learner import BaseA2CLearner
+from torchrl.learners import BaseA2CLearner
 
 
 def train(args, agent: BaseA2CLearner, runner: MultiEpisodeRunner, logger: SummaryWriter):

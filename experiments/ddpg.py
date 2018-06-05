@@ -3,8 +3,7 @@ from tensorboardX import SummaryWriter
 
 from torchrl import EpisodeRunner, MultiEpisodeRunner, CPUReplayBuffer
 from torchrl.utils import set_seeds, get_gym_spaces
-
-from ddpg_learner import BaseDDPGLearner
+from torchrl.learners import BaseDDPGLearner
 
 
 def train(args, agent: BaseDDPGLearner, runner: MultiEpisodeRunner, logger: SummaryWriter, buffer: CPUReplayBuffer):

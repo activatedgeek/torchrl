@@ -4,7 +4,7 @@ from torch.optim import Adam
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
-from torchrl import BaseLearner
+from torchrl.learners import BaseLearner
 
 from models import A2CNet
 

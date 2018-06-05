@@ -3,8 +3,7 @@ from tensorboardX import SummaryWriter
 
 from torchrl import EpisodeRunner, MultiEpisodeRunner, CPUReplayBuffer
 from torchrl.utils import set_seeds, get_gym_spaces, eval_gym_env
-
-from dqn_learner import BaseDQNLearner
+from torchrl.learners import BaseDQNLearner
 
 
 class CartPoleDQNLearner(BaseDQNLearner):

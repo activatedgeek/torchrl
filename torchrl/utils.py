@@ -5,7 +5,7 @@ import random
 import gym
 
 from torchrl.learners import BaseLearner
-from torchrl import EpisodeRunner
+from torchrl.episode_runner import EpisodeRunner
 
 
 def set_seeds(seed):
@@ -52,18 +52,3 @@ def eval_gym_env(args, agent: BaseLearner):
     runner.stop()
 
     return np.average(rewards)
-
-
-def polyak_average(source, target, tau=1e-3):
-    """
-    Polyak Average from the source to the target
-    :param tau: Polyak Averaging Parameter
-    :param source: Source Module
-    :param target: Target Module
-    :return:
-    """
-    assert isinstance(source, nn.Module), '"source" should be of type nn.Module, found "{}"'.format(type(source))
-    assert isinstance(target, nn.Module), '"target" should be of type nn.Module, found "{}"'.format(type(target))
-
-    for src_param, target_param in zip(source.parameters(), target.parameters()):
-        target_param.data.copy_(tau * src_param.data + (1.0 - tau) * target_param.data)
