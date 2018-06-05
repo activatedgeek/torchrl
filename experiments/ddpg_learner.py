@@ -7,66 +7,85 @@ from torch.autograd import Variable
 
 from torchrl import BaseLearner
 from torchrl.utils import polyak_average
+from torchrl.policies import OUNoise
 
-from models import Actor, Critic
+from models import DDPGActorNet, DDPGCriticNet
 
 
 class BaseDDPGLearner(BaseLearner):
-    def __init__(self, observation_space, action_space, noise,
+    def __init__(self, observation_space, action_space,
                  actor_lr=1e-4,
                  critic_lr=1e-3,
                  gamma=0.99,
                  tau=1e-2):
         super(BaseDDPGLearner, self).__init__(observation_space, action_space)
 
-        self.actor = Actor(observation_space.shape[0], action_space.shape[0])
+        self.actor = DDPGActorNet(observation_space.shape[0], action_space.shape[0], 256)
         self.target_actor = deepcopy(self.actor)
         self.actor_optim = Adam(self.actor.parameters(), lr=actor_lr)
 
-        self.critic = Critic(observation_space.shape[0], action_space.shape[0])
+        self.critic = DDPGCriticNet(observation_space.shape[0], action_space.shape[0], 256)
         self.target_critic = deepcopy(self.critic)
         self.critic_optim = Adam(self.critic.parameters(), lr=critic_lr)
 
         self.gamma = gamma
         self.tau = tau
-        self.noise = noise
+        self.noise = OUNoise(self.action_space)
 
         self.train()
+
+        # Internal Variables
+        self._step = 0
 
     def act(self, obs, **kwargs):
         action = self.actor(obs)
         action = action.cpu().data.numpy()
-        action += self.noise()
-        action = np.clip(action, self.action_space.low, self.action_space.high)
+        action = self.noise.get_action(action, self._step)
+        action = self.clip_action(action)
+
+        self._step += 1
+
         return np.expand_dims(action, axis=1)
+
+    def clip_action(self, action: np.array):
+        low_bound = self.action_space.low
+        upper_bound = self.action_space.high
+
+        action = low_bound + (action + 1.0) * 0.5 * (upper_bound - low_bound)
+        action = np.clip(action, low_bound, upper_bound)
+
+        return action
 
     def learn(self, obs, action, reward, next_obs, done, **kwargs):
         obs_tensor = Variable(torch.from_numpy(obs).float())
         action_tensor = Variable(torch.from_numpy(action).float())
         reward_tensor = Variable(torch.from_numpy(reward).float())
         next_obs_tensor = Variable(torch.from_numpy(next_obs).float())
+        done_tensor = Variable(torch.from_numpy(done).float())
 
         if self.is_cuda:
             obs_tensor = obs_tensor.cuda()
             action_tensor = action_tensor.cuda()
             reward_tensor = reward_tensor.cuda()
             next_obs_tensor = next_obs_tensor.cuda()
-
-        current_q = self.critic(obs_tensor, action_tensor)
-
-        target_q = reward_tensor + self.gamma * self.target_critic(next_obs_tensor, self.target_actor(next_obs_tensor))
-
-        critic_loss = F.mse_loss(current_q, target_q)
-
-        critic_loss.backward()
-        self.critic_optim.step()
-        self.critic_optim.zero_grad()
+            done_tensor = done_tensor.cuda()
 
         actor_loss = - self.critic(obs_tensor, self.actor(obs_tensor)).mean()
 
+        next_action_tensor = self.target_actor(next_obs_tensor).detach()
+        current_q = self.critic(obs_tensor, action_tensor)
+        target_q = reward_tensor + \
+            (1.0 - done_tensor) * self.gamma * self.target_critic(next_obs_tensor, next_action_tensor)
+
+        critic_loss = F.mse_loss(current_q, target_q.detach())
+
+        self.actor_optim.zero_grad()
         actor_loss.backward()
         self.actor_optim.step()
-        self.actor_optim.zero_grad()
+
+        self.critic_optim.zero_grad()
+        critic_loss.backward()
+        self.critic_optim.step()
 
         polyak_average(self.actor, self.target_actor, self.tau)
         polyak_average(self.critic, self.target_critic, self.tau)
@@ -75,6 +94,7 @@ class BaseDDPGLearner(BaseLearner):
 
     def reset(self):
         self.noise.reset()
+        self._step = 0
 
     def cuda(self):
         self.actor.cuda()

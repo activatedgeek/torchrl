@@ -24,15 +24,16 @@ class QNet(nn.Module):
         nn.init.xavier_uniform(self.net[2].weight)
 
 
-class Actor(nn.Module):
-    def __init__(self, state_size, action_size, hidden_size=64):
-        super(Actor, self).__init__()
+class DDPGActorNet(nn.Module):
+    def __init__(self, state_size, action_size, hidden_size):
+        super(DDPGActorNet, self).__init__()
 
         self.state_size = state_size
         self.action_size = action_size
         self.hidden_size = hidden_size
 
-        # @TODO: add layer norm?
+        self._weight_init = 3e-3
+
         self.net = nn.Sequential(
             nn.Linear(self.state_size, self.hidden_size),
             nn.ReLU(),
@@ -48,25 +49,24 @@ class Actor(nn.Module):
         return self.net(obs)
 
     def _init_weights(self):
-        nn.init.uniform(self.net[-2].weight, -3e-3, 3e-3)
+        nn.init.uniform(self.net[-2].weight, -self._weight_init, self._weight_init)
+        nn.init.uniform(self.net[-2].bias, -self._weight_init, self._weight_init)
 
 
-class Critic(nn.Module):
-    def __init__(self, state_size, action_size, hidden_size=64):
-        super(Critic, self).__init__()
+class DDPGCriticNet(nn.Module):
+    def __init__(self, state_size, action_size, hidden_size):
+        super(DDPGCriticNet, self).__init__()
 
         self.state_size = state_size
         self.action_size = action_size
         self.hidden_size = hidden_size
 
-        # @TODO: add layer norm?
-        self.net = nn.Sequential(
-            nn.Linear(self.state_size, self.hidden_size),
-            nn.ReLU()
-        )
+        self._weight_init = 3e-3
 
-        self.out = nn.Sequential(
-            nn.Linear(self.hidden_size + self.action_size, self.hidden_size),
+        self.net = nn.Sequential(
+            nn.Linear(self.state_size + self.action_size, self.hidden_size),
+            nn.ReLU(),
+            nn.Linear(self.hidden_size, self.hidden_size),
             nn.ReLU(),
             nn.Linear(self.hidden_size, 1)
         )
@@ -74,18 +74,16 @@ class Critic(nn.Module):
         self._init_weights()
 
     def forward(self, obs, action):
-        x = self.net(obs)
-        y = torch.cat([x, action], dim=1)
-        out = self.out(y)
-        return out
+        return self.net(torch.cat([obs, action], dim=1))
 
     def _init_weights(self):
-        nn.init.uniform(self.out[-1].weight, -3e-4, 3e-4)
+        nn.init.uniform(self.net[-1].weight, -self._weight_init, self._weight_init)
+        nn.init.uniform(self.net[-1].bias, -self._weight_init, self._weight_init)
 
 
-class ACNet(nn.Module):
+class A2CNet(nn.Module):
     def __init__(self, input_size, output_size, hidden_size):
-        super(ACNet, self).__init__()
+        super(A2CNet, self).__init__()
 
         self._input_size = input_size
         self._output_size = output_size

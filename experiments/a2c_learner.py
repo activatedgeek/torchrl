@@ -6,7 +6,7 @@ from torch.distributions import Categorical
 
 from torchrl import BaseLearner
 
-from models import ACNet
+from models import A2CNet
 
 
 class BaseA2CLearner(BaseLearner):
@@ -18,7 +18,7 @@ class BaseA2CLearner(BaseLearner):
                  beta=1.0):
         super(BaseA2CLearner, self).__init__(observation_space, action_space)
 
-        self.ac_net = ACNet(observation_space.shape[0], action_space.n, 256)
+        self.ac_net = A2CNet(observation_space.shape[0], action_space.n, 256)
         self.ac_net_optim = Adam(self.ac_net.parameters(), lr=lr)
 
         self.gamma = gamma

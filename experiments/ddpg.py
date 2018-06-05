@@ -3,7 +3,7 @@ import numpy as np
 from tensorboardX import SummaryWriter
 
 from torchrl import EpisodeRunner, MultiEpisodeRunner, CPUReplayBuffer
-from torchrl.utils import set_seeds, OUNoise, get_gym_spaces
+from torchrl.utils import set_seeds, get_gym_spaces
 
 from ddpg_learner import BaseDDPGLearner
 
@@ -84,11 +84,6 @@ def main(args):
     agent = BaseDDPGLearner(
         observation_space,
         action_space,
-        OUNoise(
-            mean=args.ou_mu * np.ones(action_space.shape[0]),
-            sigma=args.ou_sigma * np.ones(action_space.shape[0]),
-            theta=args.ou_theta
-        ),
         actor_lr=args.actor_lr,
         critic_lr=args.critic_lr,
         gamma=args.gamma,
