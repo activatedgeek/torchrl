@@ -38,6 +38,7 @@ class BasePPOLearner(BaseLearner):
   def compute_returns(self, obs, action, reward, next_obs, done):  # pylint: disable=unused-argument
     with torch.no_grad():
       obs_tensor = torch.from_numpy(obs).float()
+
       if self.is_cuda:
         obs_tensor = obs_tensor.cuda()
 
@@ -66,20 +67,25 @@ class BasePPOLearner(BaseLearner):
 
       return returns
 
-  def compute_old_log_probs(self, obs, action):
+  def compute_old_data(self, obs, action):
     with torch.no_grad():
       obs_tensor = torch.from_numpy(obs).float()
+      action_tensor = torch.from_numpy(action).float()
       if self.is_cuda:
         obs_tensor = obs_tensor.cuda()
+        action_tensor = action_tensor.cuda()
 
-      _, mean, std = self.ac_net(obs_tensor)
+      values, mean, std = self.ac_net(obs_tensor)
       dist = Normal(mean, std)
-      return dist.log_prob(action)
+      return values, dist.log_prob(action_tensor)
 
-  def learn(self, obs, action, reward, next_obs, done, returns):  # pylint: disable=unused-argument
-    obs_tensor = torch.from_numpy(obs).float()
-    action_tensor = torch.from_numpy(action).long()
-    return_tensor = torch.from_numpy(returns).float()
+  def learn(self, obs, action, reward, next_obs, done, returns,  # pylint: disable=unused-argument
+            old_values, old_log_probs, minibatch_idx):
+    obs_tensor = torch.from_numpy(obs).float()[minibatch_idx, :]
+    action_tensor = torch.from_numpy(action).float()[minibatch_idx, :]
+    return_tensor = torch.from_numpy(returns).float()[minibatch_idx, :]
+    old_values = old_values[minibatch_idx, :]
+    old_log_probs = old_log_probs[minibatch_idx, :]
 
     if self.is_cuda:
       obs_tensor = obs_tensor.cuda()
@@ -89,19 +95,18 @@ class BasePPOLearner(BaseLearner):
     values, mean, std = self.ac_net(obs_tensor)
     dist = Normal(mean, std)
 
-    advantages = return_tensor - values
+    old_advantages = return_tensor - old_values
 
-    # TODO: compute log probs for new and old
+    new_log_probs = dist.log_prob(action_tensor)
     ratio = (new_log_probs - old_log_probs).exp()
-    surr1 = ratio * advantages.detach()
+    surr1 = ratio * old_advantages
     surr2 = torch.clamp(ratio, 1.0 - self.clip_ratio,
-                        1 + self.clip_ratio) * advantages.detach()
+                        1 + self.clip_ratio) * old_advantages
     actor_loss = - torch.min(surr1, surr2).mean()
 
-    critic_loss = advantages.pow(2).mean()
+    critic_loss = old_advantages.pow(2).mean()
 
-    # TODO: compute current distribution entropy
-    entropy_loss = - (prob * prob.log()).sum(dim=1).mean()
+    entropy_loss = dist.entropy().mean()
 
     loss = actor_loss + self.alpha * critic_loss + self.beta * entropy_loss
 

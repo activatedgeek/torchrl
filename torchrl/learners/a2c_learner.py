@@ -75,15 +75,16 @@ class BaseA2CLearner(BaseLearner):
       return_tensor = return_tensor.cuda()
 
     values, prob = self.ac_net(obs_tensor)
+    dist = Categorical(prob)
 
     advantages = return_tensor - values
 
-    action_log_probs = prob.log().gather(1, action_tensor)
+    action_log_probs = dist.log_prob(action_tensor.squeeze(-1)).unsqueeze(1)
     actor_loss = - (advantages.detach() * action_log_probs).mean()
 
     critic_loss = advantages.pow(2).mean()
 
-    entropy_loss = - (prob * prob.log()).sum(dim=1).mean()
+    entropy_loss = dist.entropy().mean()
 
     loss = actor_loss + self.alpha * critic_loss + self.beta * entropy_loss
 

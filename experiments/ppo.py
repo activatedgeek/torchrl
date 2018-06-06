@@ -27,10 +27,10 @@ def train(args, agent: BasePPOLearner, runner: MultiEpisodeRunner, logger: Summa
         returns = np.concatenate([agent.compute_returns(*history) for history in history_list], axis=0)
 
         # Train the agent
-        old_log_probs = agent.compute_old_log_probs(*batch_history[:2])
+        old_values, old_log_probs = agent.compute_old_data(*batch_history[:2])
         for _ in range(args.ppo_epochs):
-            # TODO: convert to minibatch instead of full data
-            actor_loss, critic_loss, entropy_loss = agent.learn(*batch_history, returns)
+            minibatch_idx = np.random.choice(len(returns), args.batch_size)
+            actor_loss, critic_loss, entropy_loss = agent.learn(*batch_history, returns, old_values, old_log_probs, minibatch_idx)
 
         # Stats Collection for this epoch
         epoch_rollout_steps = 0
