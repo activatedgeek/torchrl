@@ -4,16 +4,15 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 from torch.optim import Adam
-from torch.autograd import Variable
 
 from torchrl.learners import BaseLearner
 from torchrl.policies import OUNoise
 from torchrl.models import DDPGActorNet, DDPGCriticNet
 
 
-def polyak_average(source, target, tau=1e-3):
+def polyak_average_(source, target, tau=1e-3):
   """
-  Polyak Average from the source to the target
+  In-place Polyak Average from the source to the target
   :param tau: Polyak Averaging Parameter
   :param source: Source Module
   :param target: Target Module
@@ -53,7 +52,7 @@ class BaseDDPGLearner(BaseLearner):
 
     self.train()
 
-    # Internal Variables
+    # Internal vars
     self._step = 0
 
   def act(self, obs, **kwargs):
@@ -76,11 +75,11 @@ class BaseDDPGLearner(BaseLearner):
     return action
 
   def learn(self, obs, action, reward, next_obs, done, **kwargs):
-    obs_tensor = Variable(torch.from_numpy(obs).float())
-    action_tensor = Variable(torch.from_numpy(action).float())
-    reward_tensor = Variable(torch.from_numpy(reward).float())
-    next_obs_tensor = Variable(torch.from_numpy(next_obs).float())
-    done_tensor = Variable(torch.from_numpy(done).float())
+    obs_tensor = torch.from_numpy(obs).float()
+    action_tensor = torch.from_numpy(action).float()
+    reward_tensor = torch.from_numpy(reward).float()
+    next_obs_tensor = torch.from_numpy(next_obs).float()
+    done_tensor = torch.from_numpy(done).float()
 
     if self.is_cuda:
       obs_tensor = obs_tensor.cuda()
@@ -107,8 +106,8 @@ class BaseDDPGLearner(BaseLearner):
     critic_loss.backward()
     self.critic_optim.step()
 
-    polyak_average(self.actor, self.target_actor, self.tau)
-    polyak_average(self.critic, self.target_critic, self.tau)
+    polyak_average_(self.actor, self.target_actor, self.tau)
+    polyak_average_(self.critic, self.target_critic, self.tau)
 
     return actor_loss.detach().cpu().data.numpy(), \
         critic_loss.detach().cpu().data.numpy()

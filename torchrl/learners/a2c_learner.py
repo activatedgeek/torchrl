@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 from torch.optim import Adam
-from torch.autograd import Variable
 from torch.distributions import Categorical
 
 from torchrl.learners import BaseLearner
@@ -34,41 +33,41 @@ class BaseA2CLearner(BaseLearner):
     return action.unsqueeze(1).cpu().data.numpy()
 
   def compute_returns(self, obs, action, reward, next_obs, done):  # pylint: disable=unused-argument
-    obs_tensor = Variable(torch.from_numpy(obs).float(), volatile=True)
-    if self.is_cuda:
-      obs_tensor = obs_tensor.cuda()
+    with torch.no_grad():
+      obs_tensor = torch.from_numpy(obs).float()
 
-    values, _ = self.ac_net(obs_tensor)
-    values = values.cpu().data.numpy()
-    if not done[-1]:
-      next_obs_tensor = Variable(torch.from_numpy(
-          next_obs[-1]).float().unsqueeze(0), volatile=True)
       if self.is_cuda:
-        next_obs_tensor = next_obs_tensor.cuda()
+        obs_tensor = obs_tensor.cuda()
 
-      next_value, _ = self.ac_net(next_obs_tensor)
-      next_value = next_value.cpu().data.numpy()
-      values = np.append(values, next_value, axis=0)
-    else:
-      values = np.append(values, np.array([[0.0]]), axis=0)
+      values, _ = self.ac_net(obs_tensor)
+      values = values.cpu().data.numpy()
+      if not done[-1]:
+        next_obs_tensor = torch.from_numpy(next_obs[-1]).float().unsqueeze(0)
+        if self.is_cuda:
+          next_obs_tensor = next_obs_tensor.cuda()
 
-    returns = [0.0] * len(reward)
-    gae = 0.0
-    for step in reversed(range(len(reward))):
-      delta = reward[step] + self.gamma * values[step + 1] - values[step]
-      gae = delta + self.gamma * self.lmbda * gae
-      returns[step] = gae + values[step]
+        next_value, _ = self.ac_net(next_obs_tensor)
+        next_value = next_value.cpu().data.numpy()
+        values = np.append(values, next_value, axis=0)
+      else:
+        values = np.append(values, np.array([[0.0]]), axis=0)
 
-    returns = np.array(returns)
-    returns = returns[::-1]
+      returns = [0.0] * len(reward)
+      gae = 0.0
+      for step in reversed(range(len(reward))):
+        delta = reward[step] + self.gamma * values[step + 1] - values[step]
+        gae = delta + self.gamma * self.lmbda * gae
+        returns[step] = gae + values[step]
 
-    return returns
+      returns = np.array(returns)
+      returns = returns[::-1]
+
+      return returns
 
   def learn(self, obs, action, reward, next_obs, done, returns):  # pylint: disable=unused-argument
-
-    obs_tensor = Variable(torch.from_numpy(obs).float())
-    action_tensor = Variable(torch.from_numpy(action).long())
-    return_tensor = Variable(torch.from_numpy(returns).float())
+    obs_tensor = torch.from_numpy(obs).float()
+    action_tensor = torch.from_numpy(action).long()
+    return_tensor = torch.from_numpy(returns).float()
 
     if self.is_cuda:
       obs_tensor = obs_tensor.cuda()
@@ -76,15 +75,16 @@ class BaseA2CLearner(BaseLearner):
       return_tensor = return_tensor.cuda()
 
     values, prob = self.ac_net(obs_tensor)
+    dist = Categorical(prob)
 
     advantages = return_tensor - values
 
-    action_log_probs = prob.log().gather(1, action_tensor)
+    action_log_probs = dist.log_prob(action_tensor.squeeze(-1)).unsqueeze(1)
     actor_loss = - (advantages.detach() * action_log_probs).mean()
 
     critic_loss = advantages.pow(2).mean()
 
-    entropy_loss = - (prob * prob.log()).sum(dim=1).mean()
+    entropy_loss = dist.entropy().mean()
 
     loss = actor_loss + self.alpha * critic_loss + self.beta * entropy_loss
 
