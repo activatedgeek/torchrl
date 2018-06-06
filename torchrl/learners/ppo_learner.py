@@ -92,7 +92,7 @@ class BasePPOLearner(BaseLearner):
       action_tensor = action_tensor.cuda()
       return_tensor = return_tensor.cuda()
 
-    values, mean, std = self.ac_net(obs_tensor)
+    _, mean, std = self.ac_net(obs_tensor)
     dist = Normal(mean, std)
 
     old_advantages = return_tensor - old_values
