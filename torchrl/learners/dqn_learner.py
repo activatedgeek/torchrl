@@ -2,7 +2,6 @@ from copy import deepcopy
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch.autograd import Variable
 from torch.optim import Adam
 
 from torchrl.learners import BaseLearner
@@ -42,11 +41,11 @@ class BaseDQNLearner(BaseLearner):
     return actions
 
   def learn(self, obs, action, reward, next_obs, done):  # pylint: disable=unused-argument
-    obs_tensor = Variable(torch.from_numpy(obs).float())
-    action_tensor = Variable(torch.from_numpy(action).long())
-    reward_tensor = Variable(torch.from_numpy(reward).float())
-    next_obs_tensor = Variable(torch.from_numpy(next_obs).float(),
-                               volatile=True)
+    obs_tensor = torch.from_numpy(obs).float()
+    action_tensor = torch.from_numpy(action).long()
+    reward_tensor = torch.from_numpy(reward).float()
+    with torch.no_grad():
+      next_obs_tensor = torch.from_numpy(next_obs).float()
 
     if self.is_cuda:
       obs_tensor = obs_tensor.cuda()

@@ -20,8 +20,8 @@ class QNet(nn.Module):
     return values
 
   def _init_weights(self):
-    nn.init.xavier_uniform(self.net[0].weight)
-    nn.init.xavier_uniform(self.net[2].weight)
+    nn.init.xavier_uniform_(self.net[0].weight)
+    nn.init.xavier_uniform_(self.net[2].weight)
 
 
 class DDPGActorNet(nn.Module):
@@ -49,8 +49,8 @@ class DDPGActorNet(nn.Module):
     return self.net(obs)
 
   def _init_weights(self):
-    nn.init.uniform(self.net[-2].weight, -self._weight_init, self._weight_init)
-    nn.init.uniform(self.net[-2].bias, -self._weight_init, self._weight_init)
+    nn.init.uniform_(self.net[-2].weight, -self._weight_init, self._weight_init)
+    nn.init.uniform_(self.net[-2].bias, -self._weight_init, self._weight_init)
 
 
 class DDPGCriticNet(nn.Module):
@@ -77,8 +77,8 @@ class DDPGCriticNet(nn.Module):
     return self.net(torch.cat([obs, action], dim=1))
 
   def _init_weights(self):
-    nn.init.uniform(self.net[-1].weight, -self._weight_init, self._weight_init)
-    nn.init.uniform(self.net[-1].bias, -self._weight_init, self._weight_init)
+    nn.init.uniform_(self.net[-1].weight, -self._weight_init, self._weight_init)
+    nn.init.uniform_(self.net[-1].bias, -self._weight_init, self._weight_init)
 
 
 class A2CNet(nn.Module):
@@ -141,5 +141,5 @@ class ActorCriticNet(nn.Module):
   @staticmethod
   def init_weights(module):
     if isinstance(module, nn.Linear):
-      nn.init.normal(module.weight, mean=0., std=0.1)
-      nn.init.constant(module.bias, 0.1)
+      nn.init.normal_(module.weight, mean=0., std=0.1)
+      nn.init.constant_(module.bias, 0.1)

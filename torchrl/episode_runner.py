@@ -3,7 +3,6 @@ import gym
 import numpy as np
 import torch
 import functools
-from torch.autograd import Variable
 
 from torchrl.learners import BaseLearner
 from torchrl.multi_proc_wrapper import MultiProcWrapper
@@ -58,14 +57,14 @@ class EpisodeRunner:
     This routine is called from the `run` routine every time an action
     is needed for the environment to step.
     """
-    obs_tensor = torch.from_numpy(self._obs).unsqueeze(0).float()
-    obs_tensor = Variable(obs_tensor, volatile=True)
-    if learner.is_cuda:
-      obs_tensor = obs_tensor.cuda()
+    with torch.no_grad():
+      obs_tensor = torch.from_numpy(self._obs).unsqueeze(0).float()
 
-    action = learner.act(obs_tensor)
-    # `act` is a batch call
-    return action[0][0]
+      if learner.is_cuda:
+        obs_tensor = obs_tensor.cuda()
+
+      action = learner.act(obs_tensor)
+      return action[0][0]  # `act` is a batch call
 
   def collect(self, learner: BaseLearner, steps: int = None,
               render: bool = False, fps: int = 30, store: bool = False):
