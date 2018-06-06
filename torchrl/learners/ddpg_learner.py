@@ -8,8 +8,7 @@ from torch.autograd import Variable
 
 from torchrl.learners import BaseLearner
 from torchrl.policies import OUNoise
-
-from models import DDPGActorNet, DDPGCriticNet
+from torchrl.models import DDPGActorNet, DDPGCriticNet
 
 
 def polyak_average(source, target, tau=1e-3):

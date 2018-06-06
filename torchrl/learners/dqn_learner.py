@@ -7,8 +7,7 @@ from torch.optim import Adam
 
 from torchrl.learners import BaseLearner
 from torchrl.policies import epsilon_greedy
-
-from models import QNet
+from torchrl.models import QNet
 
 
 class BaseDQNLearner(BaseLearner):

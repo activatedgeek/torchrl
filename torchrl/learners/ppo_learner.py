@@ -2,34 +2,37 @@ import numpy as np
 import torch
 from torch.optim import Adam
 from torch.autograd import Variable
-from torch.distributions import Categorical
+from torch.distributions import Normal
 
 from torchrl.learners import BaseLearner
-from torchrl.models import A2CNet
+from torchrl.models import ActorCriticNet
 
 
-class BaseA2CLearner(BaseLearner):
+class BasePPOLearner(BaseLearner):
   def __init__(self, observation_space, action_space,
                lr=1e-3,
                gamma=0.99,
-               lmbda=1.0,
+               lmbda=0.01,
                alpha=0.5,
-               beta=1.0):
-    super(BaseA2CLearner, self).__init__(observation_space, action_space)
+               beta=1.0,
+               clip_ratio=0.2):
+    super(BasePPOLearner, self).__init__(observation_space, action_space)
 
-    self.ac_net = A2CNet(observation_space.shape[0], action_space.n, 256)
+    self.ac_net = ActorCriticNet(observation_space.shape[0],
+                                 action_space.shape[0], 256)
     self.ac_net_optim = Adam(self.ac_net.parameters(), lr=lr)
 
     self.gamma = gamma
     self.lmbda = lmbda
     self.alpha = alpha
     self.beta = beta
+    self.clip_ratio = clip_ratio
 
     self.train()
 
   def act(self, obs):
-    _, prob = self.ac_net(obs)
-    dist = Categorical(prob)
+    _, mean, std = self.ac_net(obs)
+    dist = Normal(mean, std)
     action = dist.sample()
     return action.unsqueeze(1).cpu().data.numpy()
 
@@ -38,7 +41,7 @@ class BaseA2CLearner(BaseLearner):
     if self.is_cuda:
       obs_tensor = obs_tensor.cuda()
 
-    values, _ = self.ac_net(obs_tensor)
+    values, _, _ = self.ac_net(obs_tensor)
     values = values.cpu().data.numpy()
     if not done[-1]:
       next_obs_tensor = Variable(torch.from_numpy(
@@ -46,7 +49,7 @@ class BaseA2CLearner(BaseLearner):
       if self.is_cuda:
         next_obs_tensor = next_obs_tensor.cuda()
 
-      next_value, _ = self.ac_net(next_obs_tensor)
+      next_value, _, _ = self.ac_net(next_obs_tensor)
       next_value = next_value.cpu().data.numpy()
       values = np.append(values, next_value, axis=0)
     else:
@@ -64,8 +67,16 @@ class BaseA2CLearner(BaseLearner):
 
     return returns
 
-  def learn(self, obs, action, reward, next_obs, done, returns):  # pylint: disable=unused-argument
+  def compute_old_log_probs(self, obs, action):
+    obs_tensor = Variable(torch.from_numpy(obs).float(), volatile=True)
+    if self.is_cuda:
+      obs_tensor = obs_tensor.cuda()
 
+    _, mean, std = self.ac_net(obs_tensor)
+    dist = Normal(mean, std)
+    return dist.log_prob(action)
+
+  def learn(self, obs, action, reward, next_obs, done, returns):  # pylint: disable=unused-argument
     obs_tensor = Variable(torch.from_numpy(obs).float())
     action_tensor = Variable(torch.from_numpy(action).long())
     return_tensor = Variable(torch.from_numpy(returns).float())
@@ -75,15 +86,21 @@ class BaseA2CLearner(BaseLearner):
       action_tensor = action_tensor.cuda()
       return_tensor = return_tensor.cuda()
 
-    values, prob = self.ac_net(obs_tensor)
+    values, mean, std = self.ac_net(obs_tensor)
+    dist = Normal(mean, std)
 
     advantages = return_tensor - values
 
-    action_log_probs = prob.log().gather(1, action_tensor)
-    actor_loss = - (advantages.detach() * action_log_probs).mean()
+    # TODO: compute log probs for new and old
+    ratio = (new_log_probs - old_log_probs).exp()
+    surr1 = ratio * advantages.detach()
+    surr2 = torch.clamp(ratio, 1.0 - self.clip_ratio,
+                        1 + self.clip_ratio) * advantages.detach()
+    actor_loss = - torch.min(surr1, surr2).mean()
 
     critic_loss = advantages.pow(2).mean()
 
+    # TODO: compute current distribution entropy
     entropy_loss = - (prob * prob.log()).sum(dim=1).mean()
 
     loss = actor_loss + self.alpha * critic_loss + self.beta * entropy_loss
