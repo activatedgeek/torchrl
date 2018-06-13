@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 from torch.optim import Adam
-from torch.distributions import Normal
 
 from torchrl.learners import BaseLearner
 from torchrl.models import ActorCriticNet

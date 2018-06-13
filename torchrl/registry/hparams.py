@@ -9,9 +9,13 @@ class HParams:
   def __setattr__(self, key, value):
     self.__dict__[key] = value
 
+  def __iter__(self):
+    for key, value in self.__dict__.items():
+      yield key, value
+
   def __repr__(self):
     print_str = ''
-    for key, value in self.__dict__.items():
+    for key, value in self:
       print_str += '{}: {}\n'.format(key, value)
     return print_str
 
