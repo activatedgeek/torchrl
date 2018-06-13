@@ -2,7 +2,7 @@ import numpy as np
 from tensorboardX import SummaryWriter
 
 from torchrl import EpisodeRunner, MultiEpisodeRunner
-from torchrl.utils import set_seeds, get_gym_spaces, eval_gym_env
+from torchrl.utils import set_seeds, get_gym_spaces, eval_gym_env, minibatch_generator
 from torchrl.learners import BasePPOLearner
 
 
@@ -29,8 +29,9 @@ def train(args, agent: BasePPOLearner, runner: MultiEpisodeRunner, logger: Summa
         # Train the agent
         old_values, old_log_probs = agent.compute_old_data(*batch_history[:2])
         for _ in range(args.ppo_epochs):
-            minibatch_idx = np.random.choice(len(returns), args.batch_size)
-            actor_loss, critic_loss, entropy_loss = agent.learn(*batch_history, returns, old_values, old_log_probs, minibatch_idx)
+            for data in minibatch_generator(*batch_history, returns,
+                                            old_values, old_log_probs, minibatch_size=args.batch_size):
+              actor_loss, critic_loss, entropy_loss = agent.learn(*data)
 
         # Stats Collection for this epoch
         epoch_rollout_steps = 0

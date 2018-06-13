@@ -18,8 +18,8 @@ All Tensorboard logs are written to `experiments/log` by default.
 ## A2C on CartPole-v0
 
 ```
---env CartPole-v0 --algo a2c --seed 1 --rollout-steps 5 --num-processes 16 --num-total-steps 500000 \
---gamma 0.99 --alpha 0.5 --beta 1e-3 --lambda 0.95 --actor-lr 3e-4 --eval-interval 500
+--env CartPole-v0 --algo a2c --seed 1 --rollout-steps 5 --num-processes 16 --num-total-steps 1600000 \
+--gamma 0.99 --alpha 0.5 --beta 1e-3 --lambda 1.0 --actor-lr 3e-4 --eval-interval 1000
 ```
 
 ## DDPG on Pendulum-v0
@@ -33,7 +33,7 @@ All Tensorboard logs are written to `experiments/log` by default.
 ## PPO on Pendulum-v0
 
 ```
---env Pendulum-v0 --algo ppo --seed 1 --rollout-steps 20 --num-processes 16 --num-total-steps 400000 \
+--env Pendulum-v0 --algo ppo --seed 1 --rollout-steps 20 --num-processes 16 --num-total-steps 5000000 \
 --gamma 0.99 --alpha 0.5 --beta 1e-3 --lambda 0.95 --clip-ratio 0.2 --actor-lr 3e-4 --ppo-epochs 4 \
 --batch-size 5 --eval-interval 500
 ```

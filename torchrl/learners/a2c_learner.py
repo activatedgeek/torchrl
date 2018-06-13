@@ -86,7 +86,7 @@ class BaseA2CLearner(BaseLearner):
 
     entropy_loss = dist.entropy().mean()
 
-    loss = actor_loss + self.alpha * critic_loss + self.beta * entropy_loss
+    loss = actor_loss + self.alpha * critic_loss - self.beta * entropy_loss
 
     self.ac_net_optim.zero_grad()
     loss.backward()

@@ -30,8 +30,7 @@ class BasePPOLearner(BaseLearner):
     self.train()
 
   def act(self, obs):
-    _, mean, std = self.ac_net(obs)
-    dist = Normal(mean, std)
+    _, dist = self.ac_net(obs)
     action = dist.sample()
     return action.unsqueeze(1).cpu().data.numpy()
 
@@ -42,14 +41,14 @@ class BasePPOLearner(BaseLearner):
       if self.is_cuda:
         obs_tensor = obs_tensor.cuda()
 
-      values, _, _ = self.ac_net(obs_tensor)
+      values, _ = self.ac_net(obs_tensor)
       values = values.cpu().data.numpy()
       if not done[-1]:
         next_obs_tensor = torch.from_numpy(next_obs[-1]).float().unsqueeze(0)
         if self.is_cuda:
           next_obs_tensor = next_obs_tensor.cuda()
 
-        next_value, _, _ = self.ac_net(next_obs_tensor)
+        next_value, _ = self.ac_net(next_obs_tensor)
         next_value = next_value.cpu().data.numpy()
         values = np.append(values, next_value, axis=0)
       else:
@@ -75,40 +74,37 @@ class BasePPOLearner(BaseLearner):
         obs_tensor = obs_tensor.cuda()
         action_tensor = action_tensor.cuda()
 
-      values, mean, std = self.ac_net(obs_tensor)
-      dist = Normal(mean, std)
+      values, dist = self.ac_net(obs_tensor)
       return values, dist.log_prob(action_tensor)
 
   def learn(self, obs, action, reward, next_obs, done, returns,  # pylint: disable=unused-argument
-            old_values, old_log_probs, minibatch_idx):
-    obs_tensor = torch.from_numpy(obs).float()[minibatch_idx, :]
-    action_tensor = torch.from_numpy(action).float()[minibatch_idx, :]
-    return_tensor = torch.from_numpy(returns).float()[minibatch_idx, :]
-    old_values = old_values[minibatch_idx, :]
-    old_log_probs = old_log_probs[minibatch_idx, :]
+            old_values, old_log_probs):
+    obs_tensor = torch.from_numpy(obs).float()
+    action_tensor = torch.from_numpy(action).float()
+    return_tensor = torch.from_numpy(returns).float()
 
     if self.is_cuda:
       obs_tensor = obs_tensor.cuda()
       action_tensor = action_tensor.cuda()
       return_tensor = return_tensor.cuda()
+      old_values = old_values.cuda()
+      old_log_probs = old_log_probs.cuda()
 
-    _, mean, std = self.ac_net(obs_tensor)
-    dist = Normal(mean, std)
-
-    old_advantages = return_tensor - old_values
+    values, dist = self.ac_net(obs_tensor)
 
     new_log_probs = dist.log_prob(action_tensor)
     ratio = (new_log_probs - old_log_probs).exp()
+    old_advantages = return_tensor - old_values
     surr1 = ratio * old_advantages
     surr2 = torch.clamp(ratio, 1.0 - self.clip_ratio,
                         1 + self.clip_ratio) * old_advantages
-    actor_loss = - torch.min(surr1, surr2).mean()
+    actor_loss = - torch.cat([surr1, surr2], dim=1).min(dim=1)[0].mean()
 
-    critic_loss = old_advantages.pow(2).mean()
+    critic_loss = (return_tensor - values).pow(2).mean()
 
     entropy_loss = dist.entropy().mean()
 
-    loss = actor_loss + self.alpha * critic_loss + self.beta * entropy_loss
+    loss = actor_loss + self.alpha * critic_loss - self.beta * entropy_loss
 
     self.ac_net_optim.zero_grad()
     loss.backward()

@@ -53,3 +53,11 @@ def eval_gym_env(args, agent: BaseLearner):
   runner.stop()
 
   return np.average(rewards)
+
+
+def minibatch_generator(*args, minibatch_size=5):
+  total_len = len(args[0])
+  minibatch_idx = np.random.choice(total_len, minibatch_size)
+  for _ in range(total_len // minibatch_size):
+    yield tuple(map(lambda item: item[minibatch_idx, :], args))
+    minibatch_idx = np.random.choice(total_len, minibatch_size)

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch.distributions import Normal
 
 
 class QNet(nn.Module):
@@ -136,7 +137,8 @@ class ActorCriticNet(nn.Module):
     value = self.critic(obs)
     mean = self.actor(obs)
     std = self.log_std.exp().expand_as(mean)
-    return value, mean, std
+    dist = Normal(mean, std)
+    return value, dist
 
   @staticmethod
   def init_weights(module):
