@@ -20,9 +20,9 @@ class MultiEnvs(MultiProcWrapper):
   def __init__(self, env_id: str, n_envs: int = 1, base_seed: int = 0,
                daemon: bool = True, autostart: bool = True):
     obj_fns = [
-      functools.partial(MultiEnvs.make_env, env_id,
-                        None if base_seed is None else base_seed + rank)
-      for rank in range(1, n_envs + 1)
+        functools.partial(MultiEnvs.make_env, env_id,
+                          None if base_seed is None else base_seed + rank)
+        for rank in range(1, n_envs + 1)
     ]
     super(MultiEnvs, self).__init__(obj_fns, daemon=daemon, autostart=autostart)
 

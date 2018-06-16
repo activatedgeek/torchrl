@@ -25,7 +25,7 @@ class PendulumPPOProblem(PPOProblem):
         beta=args.beta)
 
     if args.cuda:
-        agent.cuda()
+      agent.cuda()
 
     return agent
 

@@ -5,12 +5,13 @@ from torchrl.learners import BaseDQNLearner
 
 
 class CartPoleDQNLearner(BaseDQNLearner):
-  def learn(self, obs, action, reward, next_obs, done, **kwargs):
-    for i in range(len(reward)):
+  def learn(self, obs, action, reward, next_obs, done):
+    for i, _ in enumerate(reward):
       if done[i] == 1:
         reward[i] = -1.0
 
-    return super(CartPoleDQNLearner, self).learn(obs, action, reward, next_obs, done)
+    return super(CartPoleDQNLearner, self).learn(
+        obs, action, reward, next_obs, done)
 
 
 @registry.register_problem('dqn-cartpole-v1')
@@ -25,14 +26,14 @@ class CartPoleDQNProblem(DQNProblem):
     observation_space, action_space = self.get_gym_spaces()
 
     agent = CartPoleDQNLearner(
-      observation_space,
-      action_space,
-      lr=args.actor_lr,
-      gamma=args.gamma,
-      target_update_interval=args.target_update_interval)
+        observation_space,
+        action_space,
+        lr=args.actor_lr,
+        gamma=args.gamma,
+        target_update_interval=args.target_update_interval)
 
     if args.cuda:
-        agent.cuda()
+      agent.cuda()
 
     return agent
 

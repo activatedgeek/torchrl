@@ -6,7 +6,7 @@ before_script:
   - pip install pylint
 
 script:
-  - pylint torchrl
+  - pylint torchrl experiments
   - pip install .
 
 deploy:

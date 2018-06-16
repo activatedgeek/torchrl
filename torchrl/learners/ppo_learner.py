@@ -73,7 +73,7 @@ class BasePPOLearner(BaseLearner):
 
       return returns, log_probs, values
 
-  def learn(self, obs, action, reward, next_obs, done,
+  def learn(self, obs, action, reward, next_obs, done,  #pylint: disable=unused-argument
             returns, old_log_probs, advantages):
     obs_tensor = torch.from_numpy(obs).float()
     action_tensor = torch.from_numpy(action).float()

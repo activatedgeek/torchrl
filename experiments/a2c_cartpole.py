@@ -25,7 +25,7 @@ class CartPoleA2CProblem(A2CProblem):
         beta=args.beta)
 
     if args.cuda:
-        agent.cuda()
+      agent.cuda()
 
     return agent
 
