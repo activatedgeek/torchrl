@@ -43,14 +43,22 @@ def import_usr_dir(usr_dir):
 def main():
   args = parse_args(sys.argv[1:])
 
+  # Import external modules containing problems
   for usr_dir in args.usr_dirs.split(','):
     import_usr_dir(usr_dir)
 
   hparams = registry.get_hparam(args.hparam_set)()
+
+  ##
+  # Add some housekeeping arguments which technically
+  # don't belong in hyper parameters
+  #
   hparams.log_dir = args.log_dir
   hparams.save_dir = args.save_dir
   hparams.load_dir = args.load_dir
+  hparams.cuda = args.cuda
 
+  # Initialize and run the problem
   problem_cls = registry.get_problem(args.problem)
   problem = problem_cls(hparams)
   problem.run()

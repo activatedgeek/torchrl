@@ -26,14 +26,10 @@ def base():
 
   params.num_processes = 1
   params.seed = None
-  params.cuda = torch.cuda.is_available()
+
   params.save_interval = 100
   params.eval_interval = 100
   params.num_eval = 10
-
-  params.log_dir = None
-  params.save_dir = None
-  params.load_dir = None
 
   params.gamma = 0.99
   params.rollout_steps = 100
@@ -77,6 +73,7 @@ def base_ppo():
   params.lmbda = 1.0
   params.clip_ratio = 0.2
   params.ppo_epochs = 5
+  params.max_grad_norm = 1.0
 
   return params
 

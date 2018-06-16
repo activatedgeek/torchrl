@@ -1,10 +1,3 @@
-from torchrl.registry.registry import *  # pylint: disable=wildcard-import
-
-
-# Trigger decorator imports
-def trigger_register():
-  # pylint: disable=unused-variable
-  import torchrl.registry.hparams
-
-
-trigger_register()
+from .registry import *  # pylint: disable=wildcard-import
+from . import hparams
+from . import problems

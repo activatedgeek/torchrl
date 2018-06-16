@@ -1,11 +1,13 @@
 import abc
 import numpy as np
+import gym
+import torch
 from tensorboardX import SummaryWriter
 
 from .hparams import HParams
-from .. import MultiEpisodeRunner, EpisodeRunner
+from .. import MultiEpisodeRunner, EpisodeRunner, CPUReplayBuffer
 from ..learners import BaseLearner
-from ..utils import set_seeds
+from ..utils import set_seeds, minibatch_generator
 
 
 class Problem(metaclass=abc.ABCMeta):
@@ -49,6 +51,17 @@ class Problem(metaclass=abc.ABCMeta):
                               n_runners=n_runners,
                               base_seed=base_seed)
 
+  def get_gym_spaces(self):
+    """
+    A utility function to get observation and actions spaces of a
+    Gym environment
+    """
+    env = self.make_env()
+    observation_space = env.observation_space
+    action_space = env.action_space
+    env.close()
+    return observation_space, action_space
+
   @abc.abstractmethod
   def train(self, history_list: list):
     """
@@ -74,6 +87,7 @@ class Problem(metaclass=abc.ABCMeta):
 
     return np.average(rewards)
 
+  # TODO: add logging back
   def run(self):
     """
     This is the entrypoint to a problem class and can be overridden
@@ -95,12 +109,11 @@ class Problem(metaclass=abc.ABCMeta):
       self.train(history_list)
 
       for i, history in enumerate(history_list):
-        if history[-1] == 1:
+        if history[-1][-1] == 1:
           self.runner.reset(i)
           self.agent.reset()
 
       if epoch % args.eval_interval == 0:
-        # TODO: Move this to logger
         self.agent.eval()
         print('Avg. Reward at Epoch {}: {}'.format(epoch, self.eval()))
 
@@ -110,3 +123,81 @@ class Problem(metaclass=abc.ABCMeta):
   def __exit__(self, exc_type, exc_val, exc_tb):
     self.runner.stop()
     self.logger.close()
+
+
+class DQNProblem(Problem):
+  def __init__(self, args):
+    super(DQNProblem, self).__init__(args)
+
+    self.buffer = CPUReplayBuffer(args.buffer_size)
+
+  def make_env(self):
+    return gym.make(self.args.env)
+
+  def train(self, history_list: list):
+    # Populate the buffer
+    batch_history = EpisodeRunner.merge_histories(
+      self.agent.observation_space, self.agent.action_space, *history_list)
+    transitions = list(zip(*batch_history))
+    self.buffer.extend(transitions)
+
+    if len(self.buffer) >= self.args.batch_size:
+      transition_batch = self.buffer.sample(self.args.batch_size)
+      transition_batch = list(zip(*transition_batch))
+      transition_batch = [np.array(item) for item in transition_batch]
+      loss = self.agent.learn(*transition_batch)
+      return loss
+
+
+class DDPGProblem(DQNProblem):
+  def train(self, history_list: list):
+    # only overriding to make the return decomposition clear
+    loss = super(DDPGProblem, self).train(history_list)
+    if loss is not None:
+      actor_loss, critic_loss = loss
+      return actor_loss, critic_loss
+
+
+class A2CProblem(Problem):
+  def make_env(self):
+    return gym.make(self.args.env)
+
+  def train(self, history_list: list):
+    # Merge histories across multiple trajectories
+    batch_history = EpisodeRunner.merge_histories(
+      self.agent.observation_space, self.agent.action_space, *history_list)
+    returns = np.concatenate([self.agent.compute_returns(*history)
+                              for history in history_list], axis=0)
+
+    actor_loss, critic_loss, entropy_loss = self.agent.learn(*batch_history, returns)
+    return actor_loss, critic_loss, entropy_loss
+
+
+class PPOProblem(Problem):
+  def make_env(self):
+    return gym.make(self.args.env)
+
+  def train(self, history_list: list):
+    # Merge histories across multiple trajectories
+    batch_history = EpisodeRunner.merge_histories(self.agent.observation_space,
+                                                  self.agent.action_space, *history_list)
+
+    # Compute returns, log probabilities and values
+    returns, log_probs, values = np.empty((0, 1), dtype=float), \
+                                 torch.empty(0, 1), np.empty((0, 1), dtype=float)
+    for history in history_list:
+      returns_, log_probs_, values_ = self.agent.compute_returns(*history)
+      returns = np.concatenate((returns, returns_), axis=0)
+      log_probs = torch.cat([log_probs, log_probs_], dim=0)
+      values = np.concatenate((values, values_), axis=0)
+    advantages = returns - values
+
+    # Train the agent
+    actor_loss, critic_loss, entropy_loss = None, None, None
+    for _ in range(self.args.ppo_epochs):
+      for data in minibatch_generator(*batch_history,
+                                      returns, log_probs, advantages,
+                                      minibatch_size=self.args.batch_size):
+        actor_loss, critic_loss, entropy_loss = self.agent.learn(*data)
+
+    return actor_loss, critic_loss, entropy_loss
