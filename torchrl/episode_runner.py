@@ -11,6 +11,38 @@ from torchrl.multi_proc_wrapper import MultiProcWrapper
 DEFAULT_MAX_STEPS = int(1e6)
 
 
+# TODO: Intead of env_id, take a function which can returns environments
+class MultiEnvs(MultiProcWrapper):
+  """
+  A utility class which wraps around multiple environments
+  and runs them in subprocesses
+  """
+  def __init__(self, env_id: str, n_envs: int = 1, base_seed: int = 0,
+               daemon: bool = True, autostart: bool = True):
+    obj_fns = [
+      functools.partial(MultiEnvs.make_env, env_id,
+                        None if base_seed is None else base_seed + rank)
+      for rank in range(1, n_envs + 1)
+    ]
+    super(MultiEnvs, self).__init__(obj_fns, daemon=daemon, autostart=autostart)
+
+  def reset(self, env_id: int = None):
+    return self.exec_remote('reset', proc=env_id)
+
+  def step(self, *args, **kwargs):
+    return self.exec_remote('step', args=args, kwargs=kwargs)
+
+  def close(self):
+    self.exec_remote('close')
+
+  @staticmethod
+  def make_env(env_id: str, seed: int = None):
+    env = gym.make(env_id)
+    if seed is not None:
+      env.seed(seed)
+    return env
+
+
 class EpisodeRunner:
   """
   EpisodeRunner is a utility wrapper to run episodes on a single
@@ -162,13 +194,14 @@ def make_runner(env_id: str, seed: int = None,
   return EpisodeRunner(env, max_steps=max_steps)
 
 
+# TODO: Intead of env_id, take a function which can returns environments
 class MultiEpisodeRunner(MultiProcWrapper):
   """
   This class is the parallel version of EpisodeRunner
   """
 
   def __init__(self, env_id: str, max_steps: int = DEFAULT_MAX_STEPS,
-               n_runners=2, base_seed: int = 0, daemon=True, autostart=True):
+               n_runners=1, base_seed: int = None, daemon=True, autostart=True):
     obj_fns = [
         functools.partial(make_runner, env_id,
                           None if base_seed is None else base_seed + rank,

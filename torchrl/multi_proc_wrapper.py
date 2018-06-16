@@ -17,7 +17,7 @@ def target_fn(conn, obj_fn):
 
     conn.send(result)
 
-    if fn_string == 'stop':
+    if fn_string == 'stop' or fn_string == 'close':
       break
 
 
