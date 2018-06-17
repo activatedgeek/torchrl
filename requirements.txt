@@ -1,4 +1,6 @@
 gym~=0.10
 numpy~=1.14
 torch~=0.4.0
+tensorflow~=1.8.0
+tensorboard~=1.8.0
 tensorboardX~=1.1

@@ -27,8 +27,7 @@ class BaseA2CLearner(BaseLearner):
     self.train()
 
   def act(self, obs):
-    _, prob = self.ac_net(obs)
-    dist = Categorical(prob)
+    _, dist = self.ac_net(obs)
     action = dist.sample()
     return action.unsqueeze(1).cpu().data.numpy()
 
@@ -60,7 +59,6 @@ class BaseA2CLearner(BaseLearner):
         returns[step] = gae + values[step]
 
       returns = np.array(returns)
-      returns = returns[::-1]
 
       return returns
 
@@ -74,8 +72,7 @@ class BaseA2CLearner(BaseLearner):
       action_tensor = action_tensor.cuda()
       return_tensor = return_tensor.cuda()
 
-    values, prob = self.ac_net(obs_tensor)
-    dist = Categorical(prob)
+    values, dist = self.ac_net(obs_tensor)
 
     advantages = return_tensor - values
 

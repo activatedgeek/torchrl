@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.distributions import Normal
+from torch.distributions import Normal, Categorical
 
 
 class QNet(nn.Module):
@@ -106,7 +106,8 @@ class A2CNet(nn.Module):
   def forward(self, obs):
     value = self.critic(obs)
     policy = self.actor(obs)
-    return value, policy
+    dist = Categorical(policy)
+    return value, dist
 
 
 class ActorCriticNet(nn.Module):

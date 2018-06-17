@@ -39,7 +39,7 @@ def hparam_a2c_cartpole():
 
   params.rollout_steps = 5
   params.max_episode_steps = 500
-  params.num_total_steps = int(1.6e6)
+  params.num_total_steps = int(1e6)
 
   params.alpha = 0.5
   params.gamma = 0.99

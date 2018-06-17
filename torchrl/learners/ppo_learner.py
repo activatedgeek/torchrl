@@ -66,7 +66,6 @@ class BasePPOLearner(BaseLearner):
         returns[step] = gae + values[step]
 
       returns = np.array(returns)
-      returns = returns[::-1]
 
       log_probs = dist.log_prob(action_tensor).detach()
       values = values[:-1]  # remove the added step to compute returns
@@ -104,7 +103,7 @@ class BasePPOLearner(BaseLearner):
 
     self.ac_net_optim.zero_grad()
     loss.backward()
-    nn.utils.clip_grad_value_(self.ac_net.parameters(), self.max_grad_norm)
+    # nn.utils.clip_grad_value_(self.ac_net.parameters(), self.max_grad_norm)
     self.ac_net_optim.step()
 
     return actor_loss.detach().cpu().data.numpy(), \

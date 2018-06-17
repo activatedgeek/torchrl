@@ -51,7 +51,7 @@ def hparam_ppo_pendulum():
   params.lmbda = 0.95
 
   params.clip_ratio = 0.2
-  params.max_grad_norm = 1.0
+  # params.max_grad_norm = 0.5
   params.ppo_epochs = 4
 
   return params
