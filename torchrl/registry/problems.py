@@ -133,22 +133,30 @@ class Problem(metaclass=abc.ABCMeta):
           self.agent.reset()
 
           log_n_episodes += 1
-          self.logger.add_scalar('episode length', log_episode_len[i], global_step=log_n_episodes)
-          self.logger.add_scalar('episode reward', log_episode_reward[i], global_step=log_n_episodes)
+          self.logger.add_scalar('episode length', log_episode_len[i],
+                                 global_step=log_n_episodes)
+          self.logger.add_scalar('episode reward', log_episode_reward[i],
+                                 global_step=log_n_episodes)
           log_episode_len[i] = 0
           log_episode_reward[i] = 0
 
       log_n_timesteps += log_rollout_steps
 
-      log_rollout_duration = np.average(list(map(lambda x: x['duration'], self.runner.get_stats())))
-      self.logger.add_scalar('total timesteps', log_n_timesteps, global_step=epoch)
-      self.logger.add_scalar('steps per sec', log_rollout_steps / (log_rollout_duration + 1e-6), global_step=epoch)
+      log_rollout_duration = np.average(list(map(lambda x: x['duration'],
+                                                 self.runner.get_stats())))
+      self.logger.add_scalar('total timesteps', log_n_timesteps,
+                             global_step=epoch)
+      self.logger.add_scalar('steps per sec',
+                             log_rollout_steps / (log_rollout_duration + 1e-6),
+                             global_step=epoch)
 
       if epoch % args.eval_interval == 0:
         self.agent.eval()
         log_avg_reward, log_std_reward = self.eval()
-        self.logger.add_scalar('avg eval reward', log_avg_reward, global_step=epoch)
-        self.logger.add_scalar('std eval reward', log_std_reward, global_step=epoch)
+        self.logger.add_scalar('avg eval reward', log_avg_reward,
+                               global_step=epoch)
+        self.logger.add_scalar('std eval reward', log_std_reward,
+                               global_step=epoch)
 
       if args.save_dir and epoch % args.save_interval == 0:
         self.agent.save(args.save_dir)
