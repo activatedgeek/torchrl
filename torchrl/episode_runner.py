@@ -177,13 +177,6 @@ class EpisodeRunner:
     return obs_history, action_history, reward_history, \
         next_obs_history, done_history
 
-  @staticmethod
-  def merge_histories(observation_space: gym.Space,
-                      action_space: gym.Space, *sources: tuple) -> tuple:
-    target = EpisodeRunner.init_run_history(observation_space, action_space)
-    return tuple([np.concatenate((tgt, *src), axis=0)
-                  for tgt, *src in zip(target, *sources)])
-
 
 class MultiEpisodeRunner(MultiProcWrapper):
   """

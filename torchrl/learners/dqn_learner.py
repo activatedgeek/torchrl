@@ -1,6 +1,5 @@
 from copy import deepcopy
 import numpy as np
-import torch
 import torch.nn.functional as F
 from torch.optim import Adam
 
@@ -36,27 +35,15 @@ class BaseDQNLearner(BaseLearner):
 
   def act(self, obs):
     actions = self.q_net(obs)
-    actions = actions.max(dim=1)[1].cpu().data.numpy()
+    actions = actions.max(dim=1)[1].cpu().numpy()
     actions = epsilon_greedy(self.action_space.n, actions, self.eps)
     return actions
 
   def learn(self, obs, action, reward, next_obs, done):  # pylint: disable=unused-argument
-    obs_tensor = torch.from_numpy(obs).float()
-    action_tensor = torch.from_numpy(action).long()
-    reward_tensor = torch.from_numpy(reward).float()
-    with torch.no_grad():
-      next_obs_tensor = torch.from_numpy(next_obs).float()
-
-    if self.is_cuda:
-      obs_tensor = obs_tensor.cuda()
-      action_tensor = action_tensor.cuda()
-      reward_tensor = reward_tensor.cuda()
-      next_obs_tensor = next_obs_tensor.cuda()
-
-    current_q_values = self.q_net(obs_tensor).gather(1, action_tensor)
-    max_next_q_values = self.target_q_net(next_obs_tensor).max(1)[0]\
-                                                          .unsqueeze(1)
-    expected_q_values = reward_tensor + self.gamma * max_next_q_values
+    current_q_values = self.q_net(obs).gather(1, action)
+    max_next_q_values = self.target_q_net(next_obs)
+    max_next_q_values = max_next_q_values.max(1)[0].unsqueeze(1).detach()
+    expected_q_values = reward + self.gamma * max_next_q_values
 
     loss = F.mse_loss(current_q_values, expected_q_values)
 
@@ -72,7 +59,7 @@ class BaseDQNLearner(BaseLearner):
     if self._steps % self.target_update_interval == 0:
       self.target_q_net.load_state_dict(self.q_net.state_dict())
 
-    return loss.detach().cpu().data.numpy()
+    return loss.detach().cpu().item()
 
   def cuda(self):
     self.q_net.cuda()

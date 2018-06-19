@@ -1,6 +1,5 @@
 from copy import deepcopy
 import numpy as np
-import torch
 import torch.nn.functional as F
 import torch.nn as nn
 from torch.optim import Adam
@@ -57,7 +56,7 @@ class BaseDDPGLearner(BaseLearner):
 
   def act(self, obs, **kwargs):
     action = self.actor(obs)
-    action = action.cpu().data.numpy()
+    action = action.cpu().numpy()
     action = self.noise.get_action(action, self._step)
     action = self.clip_action(action)
 
@@ -75,26 +74,11 @@ class BaseDDPGLearner(BaseLearner):
     return action
 
   def learn(self, obs, action, reward, next_obs, done, **kwargs):
-    obs_tensor = torch.from_numpy(obs).float()
-    action_tensor = torch.from_numpy(action).float()
-    reward_tensor = torch.from_numpy(reward).float()
-    next_obs_tensor = torch.from_numpy(next_obs).float()
-    done_tensor = torch.from_numpy(done).float()
+    actor_loss = - self.critic(obs, self.actor(obs)).mean()
 
-    if self.is_cuda:
-      obs_tensor = obs_tensor.cuda()
-      action_tensor = action_tensor.cuda()
-      reward_tensor = reward_tensor.cuda()
-      next_obs_tensor = next_obs_tensor.cuda()
-      done_tensor = done_tensor.cuda()
-
-    actor_loss = - self.critic(obs_tensor, self.actor(obs_tensor)).mean()
-
-    next_action_tensor = self.target_actor(next_obs_tensor).detach()
-    current_q = self.critic(obs_tensor, action_tensor)
-    target_q = reward_tensor + \
-      (1.0 - done_tensor) * self.gamma * self.target_critic(next_obs_tensor,
-                                                            next_action_tensor)
+    next_action = self.target_actor(next_obs).detach()
+    current_q = self.critic(obs, action)
+    target_q = reward + (1.0 - done.float()) * self.gamma * self.target_critic(next_obs, next_action)  # pylint: disable=line-too-long
 
     critic_loss = F.mse_loss(current_q, target_q.detach())
 
@@ -109,8 +93,8 @@ class BaseDDPGLearner(BaseLearner):
     polyak_average_(self.actor, self.target_actor, self.tau)
     polyak_average_(self.critic, self.target_critic, self.tau)
 
-    return actor_loss.detach().cpu().data.numpy(), \
-        critic_loss.detach().cpu().data.numpy()
+    return actor_loss.detach().cpu().item(), \
+        critic_loss.detach().cpu().item()
 
   def reset(self):
     self.noise.reset()

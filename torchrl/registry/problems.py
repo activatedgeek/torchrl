@@ -122,7 +122,7 @@ class Problem(metaclass=abc.ABCMeta):
                                          store=True)
 
       self.agent.train()
-      loss_dict = self.train(history_list)
+      loss_dict = self.train(Problem.hist_to_tensor(history_list))
 
       if epoch % self.args.log_interval == 0:
         for loss_label, loss_value in loss_dict.items():
@@ -171,6 +171,27 @@ class Problem(metaclass=abc.ABCMeta):
     self.runner.stop()
     self.logger.close()
 
+  @staticmethod
+  def hist_to_tensor(history_list):
+
+    def from_numpy(item):
+      tensor = torch.from_numpy(item)
+      if isinstance(tensor, torch.DoubleTensor):
+        tensor = tensor.float()
+      return tensor
+
+    return [
+        tuple([from_numpy(item) for item in history])
+        for history in history_list
+    ]
+
+  @staticmethod
+  def merge_histories(*history_list):
+    return tuple([
+        torch.cat(hist, dim=0)
+        for hist in zip(*history_list)
+    ])
+
 
 class DQNProblem(Problem):
   def __init__(self, params, args):
@@ -183,15 +204,14 @@ class DQNProblem(Problem):
 
   def train(self, history_list: list):
     # Populate the buffer
-    batch_history = EpisodeRunner.merge_histories(
-        self.agent.observation_space, self.agent.action_space, *history_list)
+    batch_history = Problem.merge_histories(*history_list)
     transitions = list(zip(*batch_history))
     self.buffer.extend(transitions)
 
     if len(self.buffer) >= self.params.batch_size:
       transition_batch = self.buffer.sample(self.params.batch_size)
       transition_batch = list(zip(*transition_batch))
-      transition_batch = [np.array(item) for item in transition_batch]
+      transition_batch = [torch.stack(item) for item in transition_batch]
       value_loss = self.agent.learn(*transition_batch)
       return {'value_loss': value_loss}
     return {}
@@ -213,10 +233,9 @@ class A2CProblem(Problem):
 
   def train(self, history_list: list):
     # Merge histories across multiple trajectories
-    batch_history = EpisodeRunner.merge_histories(
-        self.agent.observation_space, self.agent.action_space, *history_list)
-    returns = np.concatenate([self.agent.compute_returns(*history)
-                              for history in history_list], axis=0)
+    batch_history = Problem.merge_histories(*history_list)
+    returns = torch.cat([self.agent.compute_returns(*history)
+                         for history in history_list], dim=0)
 
     actor_loss, critic_loss, entropy_loss = self.agent.learn(*batch_history,
                                                              returns)
@@ -231,18 +250,9 @@ class PPOProblem(Problem):
 
   def train(self, history_list: list):
     # Merge histories across multiple trajectories
-    batch_history = EpisodeRunner.merge_histories(
-        self.agent.observation_space, self.agent.action_space, *history_list)
-
-    # Compute returns, log probabilities and values
-    returns, log_probs, values = np.empty((0, 1), dtype=float), \
-                                 torch.empty(0, 1), \
-                                 np.empty((0, 1), dtype=float)
-    for history in history_list:
-      returns_, log_probs_, values_ = self.agent.compute_returns(*history)
-      returns = np.concatenate((returns, returns_), axis=0)
-      log_probs = torch.cat([log_probs, log_probs_], dim=0)
-      values = np.concatenate((values, values_), axis=0)
+    batch_history = Problem.merge_histories(*history_list)
+    data = [self.agent.compute_returns(*history) for history in history_list]
+    returns, log_probs, values = Problem.merge_histories(*data)
     advantages = returns - values
 
     # Train the agent
