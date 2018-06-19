@@ -48,4 +48,29 @@ optional arguments:
 
 # Experiments
 
-See [experiments](./experiments.md) for ongoing implementations.
+## DQN on CartPole-v1
+
+```
+$ torchrl --problem=dqn-cartpole-v1 --hparam-set=dqn-cartpole --seed=1 --usr-dirs=experiments
+```
+
+
+## A2C on CartPole-v0
+
+```
+$ torchrl --problem=a2c-cartpole-v0 --hparam-set=a2c-cartpole --seed=1 --usr-dirs=experiments
+```
+
+## DDPG on Pendulum-v0
+
+
+```
+$ torchrl --problem=ddpg-pendulum-v0 --hparam-set=ddpg-pendulum --seed=1 --usr-dirs=experiments
+```
+
+## PPO on Pendulum-v0
+
+```
+$ torchrl --problem=ppo-pendulum-v0 --hparam-set=ppo-pendulum --seed=1 --usr-dirs=experiments
+```
+

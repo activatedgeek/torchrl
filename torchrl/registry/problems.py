@@ -40,16 +40,15 @@ class Problem(metaclass=abc.ABCMeta):
     raise NotImplementedError
 
   @abc.abstractmethod
-  def make_env(self):
+  def make_env(self) -> gym.Env:
     """
     This method should return a Gym-like environment
     :return: gym.Env
     """
     raise NotImplementedError
 
-  # TODO: this should use `self.make_env`
   def make_runner(self, n_runners=1, base_seed=None) -> MultiEpisodeRunner:
-    return MultiEpisodeRunner(self.params.env,
+    return MultiEpisodeRunner(self.make_env,
                               max_steps=self.params.max_episode_steps,
                               n_runners=n_runners,
                               base_seed=base_seed)
@@ -66,11 +65,11 @@ class Problem(metaclass=abc.ABCMeta):
     return observation_space, action_space
 
   @abc.abstractmethod
-  def train(self, history_list: list):
+  def train(self, history_list: list) -> dict:
     """
     This method is called after a rollout and must
     contain the logic for updating the agent's weights
-    :return:
+    :return: dict of key value pairs of losses
     """
     raise NotImplementedError
 
@@ -109,7 +108,7 @@ class Problem(metaclass=abc.ABCMeta):
     params = self.params
     set_seeds(self.args.seed)
 
-    n_epochs = params.num_total_steps // params.rollout_steps // params.num_processes
+    n_epochs = params.num_total_steps // params.rollout_steps // params.num_processes  # pylint: disable=line-too-long
 
     log_n_episodes = 0
     log_n_timesteps = 0
@@ -123,15 +122,11 @@ class Problem(metaclass=abc.ABCMeta):
                                          store=True)
 
       self.agent.train()
-      loss_value = self.train(history_list)
+      loss_dict = self.train(history_list)
 
-      # TODO: log losses in specific problem itself
       if epoch % self.args.log_interval == 0:
-        if isinstance(loss_value, tuple):
-          for i, loss in enumerate(loss_value):
-            self.logger.add_scalar('loss {}'.format(i), loss, global_step=epoch)
-        elif isinstance(loss_value, float):
-          self.logger.add_scalar('loss', loss_value, global_step=epoch)
+        for loss_label, loss_value in loss_dict.items():
+          self.logger.add_scalar(loss_label, loss_value, global_step=epoch)
 
       log_rollout_steps = 0
 
@@ -159,9 +154,10 @@ class Problem(metaclass=abc.ABCMeta):
         log_rollout_duration = np.average(list(map(lambda x: x['duration'],
                                                    self.runner.get_stats())))
         self.logger.add_scalar('steps per sec',
-                               log_rollout_steps / (log_rollout_duration + 1e-6),
+                               log_rollout_steps / (log_rollout_duration+1e-6),
                                global_step=epoch)
-        self.logger.add_scalar('total timesteps', log_n_timesteps, global_step=epoch)
+        self.logger.add_scalar('total timesteps', log_n_timesteps,
+                               global_step=epoch)
 
       if epoch % self.args.eval_interval == 0:
         self.eval(epoch)
@@ -172,7 +168,6 @@ class Problem(metaclass=abc.ABCMeta):
     if self.args.save_dir:
       self.agent.save(self.args.save_dir)
 
-  def __exit__(self, exc_type, exc_val, exc_tb):
     self.runner.stop()
     self.logger.close()
 
@@ -197,17 +192,19 @@ class DQNProblem(Problem):
       transition_batch = self.buffer.sample(self.params.batch_size)
       transition_batch = list(zip(*transition_batch))
       transition_batch = [np.array(item) for item in transition_batch]
-      loss = self.agent.learn(*transition_batch)
-      return loss
+      value_loss = self.agent.learn(*transition_batch)
+      return {'value_loss': value_loss}
+    return {}
 
 
 class DDPGProblem(DQNProblem):
   def train(self, history_list: list):
     # only overriding to make the return decomposition clear
-    loss = super(DDPGProblem, self).train(history_list)
-    if loss is not None:
-      actor_loss, critic_loss = loss
-      return actor_loss, critic_loss
+    loss_dict = super(DDPGProblem, self).train(history_list)
+    if 'value_loss' in loss_dict:
+      actor_loss, critic_loss = loss_dict['value_loss']
+      return {'actor_loss': actor_loss, 'critic_loss': critic_loss}
+    return {}
 
 
 class A2CProblem(Problem):
@@ -223,7 +220,9 @@ class A2CProblem(Problem):
 
     actor_loss, critic_loss, entropy_loss = self.agent.learn(*batch_history,
                                                              returns)
-    return actor_loss, critic_loss, entropy_loss
+    return {'actor_loss': actor_loss,
+            'critic_loss': critic_loss,
+            'entropy_loss': entropy_loss}
 
 
 class PPOProblem(Problem):
@@ -254,4 +253,7 @@ class PPOProblem(Problem):
                                       minibatch_size=self.params.batch_size):
         actor_loss, critic_loss, entropy_loss = self.agent.learn(*data)
 
-    return actor_loss, critic_loss, entropy_loss
+    return {'actor_loss': actor_loss,
+            'critic_loss': critic_loss,
+            'entropy_loss': entropy_loss}
+

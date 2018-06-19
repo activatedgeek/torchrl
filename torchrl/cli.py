@@ -8,8 +8,7 @@ import torchrl.registry as registry
 
 
 def parse_args(argv):
-  parser = argparse.ArgumentParser(prog='RL Experiment Runner',
-                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser = argparse.ArgumentParser(prog='RL Experiment Runner', formatter_class=argparse.ArgumentDefaultsHelpFormatter)  # pylint: disable=line-too-long
 
   parser.add_argument('--problem', type=str, required=True,
                       help='Problem name')

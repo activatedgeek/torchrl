@@ -47,9 +47,9 @@ def hparam_dqn_cartpole():
   params.actor_lr = 1e-3
   params.gamma = 0.8
   params.target_update_interval = 5
-  params.eps_min = 0.1
+  params.eps_min = 0.15
   params.buffer_size = 5000
   params.batch_size = 64
-  params.num_total_steps = 12000
+  params.num_total_steps = 10000
 
   return params

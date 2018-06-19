@@ -102,7 +102,8 @@ class BasePPOLearner(BaseLearner):
 
     self.ac_net_optim.zero_grad()
     loss.backward()
-    torch.nn.utils.clip_grad_value_(self.ac_net.parameters(), self.max_grad_norm)
+    torch.nn.utils.clip_grad_value_(self.ac_net.parameters(),
+                                    self.max_grad_norm)
     self.ac_net_optim.step()
 
     return actor_loss.detach().cpu().data.numpy(), \

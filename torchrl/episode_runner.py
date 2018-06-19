@@ -11,16 +11,15 @@ from torchrl.multi_proc_wrapper import MultiProcWrapper
 DEFAULT_MAX_STEPS = int(1e6)
 
 
-# TODO: Intead of env_id, take a function which can returns environments
 class MultiEnvs(MultiProcWrapper):
   """
   A utility class which wraps around multiple environments
   and runs them in subprocesses
   """
-  def __init__(self, env_id: str, n_envs: int = 1, base_seed: int = 0,
+  def __init__(self, make_env_fn, n_envs: int = 1, base_seed: int = 0,
                daemon: bool = True, autostart: bool = True):
     obj_fns = [
-        functools.partial(MultiEnvs.make_env, env_id,
+        functools.partial(MultiEnvs.make_env, make_env_fn,
                           None if base_seed is None else base_seed + rank)
         for rank in range(1, n_envs + 1)
     ]
@@ -36,8 +35,8 @@ class MultiEnvs(MultiProcWrapper):
     self.exec_remote('close')
 
   @staticmethod
-  def make_env(env_id: str, seed: int = None):
-    env = gym.make(env_id)
+  def make_env(make_env_fn, seed: int = None):
+    env = make_env_fn()
     if seed is not None:
       env.seed(seed)
     return env
@@ -186,30 +185,29 @@ class EpisodeRunner:
                   for tgt, *src in zip(target, *sources)])
 
 
-def make_runner(env_id: str, seed: int = None,
-                max_steps: int = DEFAULT_MAX_STEPS):
-  env = gym.make(env_id)
-  if seed is not None:
-    env.seed(seed)
-  return EpisodeRunner(env, max_steps=max_steps)
-
-
-# TODO: Intead of env_id, take a function which can returns environments
 class MultiEpisodeRunner(MultiProcWrapper):
   """
   This class is the parallel version of EpisodeRunner
   """
 
-  def __init__(self, env_id: str, max_steps: int = DEFAULT_MAX_STEPS,
+  def __init__(self, make_env_fn, max_steps: int = DEFAULT_MAX_STEPS,
                n_runners=1, base_seed: int = None, daemon=True, autostart=True):
     obj_fns = [
-        functools.partial(make_runner, env_id,
+        functools.partial(MultiEpisodeRunner.make_runner, make_env_fn,
                           None if base_seed is None else base_seed + rank,
                           max_steps=max_steps)
         for rank in range(1, n_runners + 1)
     ]
     super(MultiEpisodeRunner, self).__init__(
         obj_fns, daemon=daemon, autostart=autostart)
+
+  @staticmethod
+  def make_runner(make_env_fn, seed: int = None,
+                  max_steps: int = DEFAULT_MAX_STEPS):
+    env = make_env_fn()
+    if seed is not None:
+      env.seed(seed)
+    return EpisodeRunner(env, max_steps=max_steps)
 
   def reset(self, env_id: int = None):
     self.exec_remote('reset', proc=env_id)
