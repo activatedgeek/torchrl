@@ -16,23 +16,23 @@ class CartPoleDQNLearner(BaseDQNLearner):
 
 @registry.register_problem('dqn-cartpole-v1')
 class CartPoleDQNProblem(DQNProblem):
-  def __init__(self, args):
-    args.env = 'CartPole-v1'
-    super(CartPoleDQNProblem, self).__init__(args)
+  def __init__(self, params, args):
+    params.env = 'CartPole-v1'
+    super(CartPoleDQNProblem, self).__init__(params, args)
 
   def init_agent(self):
-    args = self.args
+    params = self.params
 
     observation_space, action_space = self.get_gym_spaces()
 
     agent = CartPoleDQNLearner(
         observation_space,
         action_space,
-        lr=args.actor_lr,
-        gamma=args.gamma,
-        target_update_interval=args.target_update_interval)
+        lr=params.actor_lr,
+        gamma=params.gamma,
+        target_update_interval=params.target_update_interval)
 
-    if args.cuda:
+    if self.args.cuda:
       agent.cuda()
 
     return agent
@@ -42,7 +42,6 @@ class CartPoleDQNProblem(DQNProblem):
 def hparam_dqn_cartpole():
   params = hparams.base_dqn()
 
-  params.seed = 1
   params.rollout_steps = 1
   params.num_processes = 1
   params.actor_lr = 1e-3
@@ -52,7 +51,5 @@ def hparam_dqn_cartpole():
   params.buffer_size = 5000
   params.batch_size = 64
   params.num_total_steps = 12000
-
-  params.eval_interval = 500
 
   return params

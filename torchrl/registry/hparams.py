@@ -24,11 +24,6 @@ def base():
   params = HParams()
 
   params.num_processes = 1
-  params.seed = None
-
-  params.save_interval = 100
-  params.eval_interval = 100
-  params.num_eval = 10
 
   params.gamma = 0.99
   params.rollout_steps = 100

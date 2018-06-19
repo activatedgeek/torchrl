@@ -8,27 +8,27 @@ All Tensorboard logs are written to `$(pwd)/log` by default.
 ## DQN on CartPole-v1
 
 ```
-$ torchrl --problem=dqn-cartpole-v1 --hparam-set=dqn-cartpole --usr-dirs=experiments
+$ torchrl --problem=dqn-cartpole-v1 --hparam-set=dqn-cartpole --seed=1 --usr-dirs=experiments
 ```
 
 
 ## A2C on CartPole-v0
 
 ```
-$ torchrl --problem=a2c-cartpole-v0 --hparam-set=a2c-cartpole --usr-dirs=experiments
+$ torchrl --problem=a2c-cartpole-v0 --hparam-set=a2c-cartpole --seed=1 --usr-dirs=experiments
 ```
 
 ## DDPG on Pendulum-v0
 
 
 ```
-$ torchrl --problem=ddpg-pendulum-v0 --hparam-set=ddpg-pendulum --usr-dirs=experiments
+$ torchrl --problem=ddpg-pendulum-v0 --hparam-set=ddpg-pendulum --seed=1 --usr-dirs=experiments
 ```
 
 ## PPO on Pendulum-v0
 
 ```
-$ torchrl --problem=ppo-pendulum-v0 --hparam-set=ppo-pendulum --usr-dirs=experiments
+$ torchrl --problem=ppo-pendulum-v0 --hparam-set=ppo-pendulum --seed=1 --usr-dirs=experiments
 ```
 
 # Issues

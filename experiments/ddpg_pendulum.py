@@ -6,24 +6,24 @@ from torchrl.learners import BaseDDPGLearner
 
 @registry.register_problem('ddpg-pendulum-v0')
 class PendulumDDPGProblem(DDPGProblem):
-  def __init__(self, args):
-    args.env = 'Pendulum-v0'
-    super(PendulumDDPGProblem, self).__init__(args)
+  def __init__(self, params, args):
+    params.env = 'Pendulum-v0'
+    super(PendulumDDPGProblem, self).__init__(params, args)
 
   def init_agent(self):
-    args = self.args
+    params = self.params
 
     observation_space, action_space = self.get_gym_spaces()
 
     agent = BaseDDPGLearner(
         observation_space,
         action_space,
-        actor_lr=args.actor_lr,
-        critic_lr=args.critic_lr,
-        gamma=args.gamma,
-        tau=args.tau)
+        actor_lr=params.actor_lr,
+        critic_lr=params.critic_lr,
+        gamma=params.gamma,
+        tau=params.tau)
 
-    if args.cuda:
+    if self.args.cuda:
       agent.cuda()
 
     return agent
@@ -33,7 +33,6 @@ class PendulumDDPGProblem(DDPGProblem):
 def hparam_ddpg_pendulum():
   params = hparams.base_ddpg()
 
-  params.seed = 1
   params.num_processes = 1
 
   params.rollout_steps = 1
@@ -47,7 +46,5 @@ def hparam_ddpg_pendulum():
   params.tau = 1e-2
   params.actor_lr = 1e-4
   params.critic_lr = 1e-3
-
-  params.eval_interval = 500
 
   return params

@@ -8,12 +8,14 @@ import torchrl.registry as registry
 
 
 def parse_args(argv):
-  parser = argparse.ArgumentParser(prog='RL Experiment Runner')
+  parser = argparse.ArgumentParser(prog='RL Experiment Runner',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument('--problem', type=str, required=True,
                       help='Problem name')
   parser.add_argument('--hparam-set', type=str, required=True,
                       help='Hyperparameter set name')
+  parser.add_argument('--seed', type=int, metavar='', help='Random seed')
 
   parser.add_argument('--usr-dirs', type=str, metavar='', default='',
                       help='Comma-separated list of user module directories')
@@ -30,6 +32,13 @@ def parse_args(argv):
                       help='Directory to store agent')
   parser.add_argument('--load-dir', type=str, metavar='',
                       help='Directory to load agent')
+
+  parser.add_argument('--log-interval', type=int, metavar='', default=100,
+                      help='Log interval w.r.t epochs')
+  parser.add_argument('--eval-interval', type=int, metavar='', default=500,
+                      help='Eval interval w.r.t epochs')
+  parser.add_argument('--num-eval', type=int, metavar='', default=10,
+                      help='Number of evaluations')
 
   args = parser.parse_args(args=argv)
 
@@ -55,19 +64,8 @@ def main():
     import_usr_dir(usr_dir)
 
   hparams = registry.get_hparam(args.hparam_set)()
-
-  ##
-  # Add some housekeeping arguments which technically
-  # don't belong in hyper parameters
-  #
-  hparams.log_dir = args.log_dir
-  hparams.save_dir = args.save_dir
-  hparams.load_dir = args.load_dir
-  hparams.cuda = args.cuda
-
-  # Initialize and run the problem
   problem_cls = registry.get_problem(args.problem)
-  problem = problem_cls(hparams)
+  problem = problem_cls(hparams, args)
   problem.run()
 
 

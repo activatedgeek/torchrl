@@ -1,4 +1,5 @@
 import abc
+import argparse
 import numpy as np
 import gym
 import torch
@@ -16,15 +17,16 @@ class Problem(metaclass=abc.ABCMeta):
   any RL problem
   """
 
-  def __init__(self, args: HParams):
+  def __init__(self, params: HParams, args: argparse.Namespace):
     """
     The constructor takes in all the parameters needed by
     the problem.
-    :param args:
+    :param params:
     """
+    self.params = params
     self.args = args
     self.agent = self.init_agent()
-    self.runner = self.make_runner(n_runners=args.num_processes,
+    self.runner = self.make_runner(n_runners=params.num_processes,
                                    base_seed=args.seed)
     self.logger = SummaryWriter(log_dir=args.log_dir)
 
@@ -47,8 +49,8 @@ class Problem(metaclass=abc.ABCMeta):
 
   # TODO: this should use `self.make_env`
   def make_runner(self, n_runners=1, base_seed=None) -> MultiEpisodeRunner:
-    return MultiEpisodeRunner(self.args.env,
-                              max_steps=self.args.max_episode_steps,
+    return MultiEpisodeRunner(self.params.env,
+                              max_steps=self.params.max_episode_steps,
                               n_runners=n_runners,
                               base_seed=base_seed)
 
@@ -72,14 +74,16 @@ class Problem(metaclass=abc.ABCMeta):
     """
     raise NotImplementedError
 
-  def eval(self):
+  def eval(self, epoch):
     """
     This method is called after a rollout and must
     contain the logic for updating the agent's weights
     :return:
     """
+    self.agent.eval()
+
     runner = EpisodeRunner(self.make_env(),
-                           max_steps=self.args.max_episode_steps)
+                           max_steps=self.params.max_episode_steps)
     rewards = []
     for _ in range(self.args.num_eval):
       runner.reset()
@@ -87,7 +91,13 @@ class Problem(metaclass=abc.ABCMeta):
       rewards.append(np.sum(reward_history, axis=0))
     runner.stop()
 
-    return np.average(rewards), np.std(rewards)
+    log_avg_reward, log_std_reward = np.average(rewards), np.std(rewards)
+    self.logger.add_scalar('avg eval reward', log_avg_reward,
+                           global_step=epoch)
+    self.logger.add_scalar('std eval reward', log_std_reward,
+                           global_step=epoch)
+
+    return log_avg_reward, log_std_reward
 
   def run(self):
     """
@@ -96,28 +106,31 @@ class Problem(metaclass=abc.ABCMeta):
     epoch. All variables for statistics are logging with "log_"
     :return:
     """
-    args = self.args
-    set_seeds(args.seed)
+    params = self.params
+    set_seeds(self.args.seed)
 
-    n_epochs = args.num_total_steps // args.rollout_steps // args.num_processes
+    n_epochs = params.num_total_steps // params.rollout_steps // params.num_processes
 
     log_n_episodes = 0
     log_n_timesteps = 0
-    log_episode_len = [0] * args.num_processes
-    log_episode_reward = [0] * args.num_processes
+    log_episode_len = [0] * params.num_processes
+    log_episode_reward = [0] * params.num_processes
 
     for epoch in range(1, n_epochs + 1):
-      self.agent.train()
+      self.agent.eval()
       history_list = self.runner.collect(self.agent,
-                                         steps=args.rollout_steps,
+                                         steps=params.rollout_steps,
                                          store=True)
 
+      self.agent.train()
       loss_value = self.train(history_list)
-      if loss_value is not None:
+
+      # TODO: log losses in specific problem itself
+      if epoch % self.args.log_interval == 0:
         if isinstance(loss_value, tuple):
           for i, loss in enumerate(loss_value):
             self.logger.add_scalar('loss {}'.format(i), loss, global_step=epoch)
-        else:
+        elif isinstance(loss_value, float):
           self.logger.add_scalar('loss', loss_value, global_step=epoch)
 
       log_rollout_steps = 0
@@ -142,24 +155,22 @@ class Problem(metaclass=abc.ABCMeta):
 
       log_n_timesteps += log_rollout_steps
 
-      log_rollout_duration = np.average(list(map(lambda x: x['duration'],
-                                                 self.runner.get_stats())))
-      self.logger.add_scalar('total timesteps', log_n_timesteps,
-                             global_step=epoch)
-      self.logger.add_scalar('steps per sec',
-                             log_rollout_steps / (log_rollout_duration + 1e-6),
-                             global_step=epoch)
-
-      if epoch % args.eval_interval == 0:
-        self.agent.eval()
-        log_avg_reward, log_std_reward = self.eval()
-        self.logger.add_scalar('avg eval reward', log_avg_reward,
+      if epoch % self.args.log_interval == 0:
+        log_rollout_duration = np.average(list(map(lambda x: x['duration'],
+                                                   self.runner.get_stats())))
+        self.logger.add_scalar('steps per sec',
+                               log_rollout_steps / (log_rollout_duration + 1e-6),
                                global_step=epoch)
-        self.logger.add_scalar('std eval reward', log_std_reward,
-                               global_step=epoch)
+        self.logger.add_scalar('total timesteps', log_n_timesteps, global_step=epoch)
 
-      if args.save_dir and epoch % args.save_interval == 0:
-        self.agent.save(args.save_dir)
+      if epoch % self.args.eval_interval == 0:
+        self.eval(epoch)
+        if self.args.save_dir:
+          self.agent.save(self.args.save_dir)
+
+    self.eval(n_epochs)
+    if self.args.save_dir:
+      self.agent.save(self.args.save_dir)
 
   def __exit__(self, exc_type, exc_val, exc_tb):
     self.runner.stop()
@@ -167,13 +178,13 @@ class Problem(metaclass=abc.ABCMeta):
 
 
 class DQNProblem(Problem):
-  def __init__(self, args):
-    super(DQNProblem, self).__init__(args)
+  def __init__(self, params, args):
+    super(DQNProblem, self).__init__(params, args)
 
-    self.buffer = CPUReplayBuffer(args.buffer_size)
+    self.buffer = CPUReplayBuffer(params.buffer_size)
 
   def make_env(self):
-    return gym.make(self.args.env)
+    return gym.make(self.params.env)
 
   def train(self, history_list: list):
     # Populate the buffer
@@ -182,8 +193,8 @@ class DQNProblem(Problem):
     transitions = list(zip(*batch_history))
     self.buffer.extend(transitions)
 
-    if len(self.buffer) >= self.args.batch_size:
-      transition_batch = self.buffer.sample(self.args.batch_size)
+    if len(self.buffer) >= self.params.batch_size:
+      transition_batch = self.buffer.sample(self.params.batch_size)
       transition_batch = list(zip(*transition_batch))
       transition_batch = [np.array(item) for item in transition_batch]
       loss = self.agent.learn(*transition_batch)
@@ -201,7 +212,7 @@ class DDPGProblem(DQNProblem):
 
 class A2CProblem(Problem):
   def make_env(self):
-    return gym.make(self.args.env)
+    return gym.make(self.params.env)
 
   def train(self, history_list: list):
     # Merge histories across multiple trajectories
@@ -217,7 +228,7 @@ class A2CProblem(Problem):
 
 class PPOProblem(Problem):
   def make_env(self):
-    return gym.make(self.args.env)
+    return gym.make(self.params.env)
 
   def train(self, history_list: list):
     # Merge histories across multiple trajectories
@@ -237,10 +248,10 @@ class PPOProblem(Problem):
 
     # Train the agent
     actor_loss, critic_loss, entropy_loss = None, None, None
-    for _ in range(self.args.ppo_epochs):
+    for _ in range(self.params.ppo_epochs):
       for data in minibatch_generator(*batch_history,
                                       returns, log_probs, advantages,
-                                      minibatch_size=self.args.batch_size):
+                                      minibatch_size=self.params.batch_size):
         actor_loss, critic_loss, entropy_loss = self.agent.learn(*data)
 
     return actor_loss, critic_loss, entropy_loss
