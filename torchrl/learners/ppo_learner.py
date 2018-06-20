@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn.functional as F
 from torch.optim import Adam
@@ -94,3 +95,11 @@ class BasePPOLearner(BaseLearner):
   def eval(self):
     self.ac_net.eval()
     self.training = False
+
+  def save(self, save_dir):
+    model_file_name = os.path.join(save_dir, 'ac_net.pth')
+    torch.save(self.ac_net.state_dict(), model_file_name)
+
+  def load(self, load_dir):
+    model_file_name = os.path.join(load_dir, 'ac_net.pth')
+    self.ac_net.load_state_dict(torch.load(model_file_name))

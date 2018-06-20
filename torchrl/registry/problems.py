@@ -2,7 +2,9 @@ import abc
 import argparse
 import numpy as np
 import gym
+import os
 import torch
+from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
 from .hparams import HParams
@@ -29,6 +31,8 @@ class Problem(metaclass=abc.ABCMeta):
     self.runner = self.make_runner(n_runners=params.num_processes,
                                    base_seed=args.seed)
     self.logger = SummaryWriter(log_dir=args.log_dir)
+    if args.load_dir:
+      self.agent.load(args.load_dir)
 
   @abc.abstractmethod
   def init_agent(self) -> BaseLearner:
@@ -98,6 +102,14 @@ class Problem(metaclass=abc.ABCMeta):
 
     return log_avg_reward, log_std_reward
 
+  def save(self, epoch):
+    if not self.args.save_dir:
+      return
+
+    save_dir = os.path.join(self.args.save_dir, 'epoch-{}'.format(epoch))
+    os.makedirs(save_dir, exist_ok=True)
+    self.agent.save(save_dir)
+
   def run(self):
     """
     This is the entrypoint to a problem class and can be overridden
@@ -115,7 +127,11 @@ class Problem(metaclass=abc.ABCMeta):
     log_episode_len = [0] * params.num_processes
     log_episode_reward = [0] * params.num_processes
 
-    for epoch in range(1, n_epochs + 1):
+    epoch_iterator = range(1, n_epochs + 1)
+    if self.args.progress:
+      epoch_iterator = tqdm(epoch_iterator)
+
+    for epoch in epoch_iterator:
       self.agent.eval()
       history_list = self.runner.collect(self.agent,
                                          steps=params.rollout_steps,
@@ -161,12 +177,10 @@ class Problem(metaclass=abc.ABCMeta):
 
       if epoch % self.args.eval_interval == 0:
         self.eval(epoch)
-        if self.args.save_dir:
-          self.agent.save(self.args.save_dir)
+        self.save(epoch)
 
     self.eval(n_epochs)
-    if self.args.save_dir:
-      self.agent.save(self.args.save_dir)
+    self.save(n_epochs)
 
     self.runner.stop()
     self.logger.close()

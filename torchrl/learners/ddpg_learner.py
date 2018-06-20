@@ -1,5 +1,7 @@
+import os
 from copy import deepcopy
 import numpy as np
+import torch
 import torch.nn.functional as F
 import torch.nn as nn
 from torch.optim import Adam
@@ -120,3 +122,19 @@ class BaseDDPGLearner(BaseLearner):
     self.critic.eval()
     self.target_critic.eval()
     self.training = False
+
+  def save(self, save_dir):
+    actor_file_name = os.path.join(save_dir, 'actor.pth')
+    torch.save(self.actor.state_dict(), actor_file_name)
+
+    critic_file_name = os.path.join(save_dir, 'critic.pth')
+    torch.save(self.critic.state_dict(), critic_file_name)
+
+  def load(self, load_dir):
+    actor_file_name = os.path.join(load_dir, 'actor.pth')
+    self.actor.load_state_dict(torch.load(actor_file_name))
+    self.target_actor = deepcopy(self.actor)
+
+    critic_file_name = os.path.join(load_dir, 'critic.pth')
+    self.critic.load_state_dict(torch.load(critic_file_name))
+    self.target_critic = deepcopy(self.critic)

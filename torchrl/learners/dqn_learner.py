@@ -1,5 +1,8 @@
+import os
+import json
 from copy import deepcopy
 import numpy as np
+import torch
 import torch.nn.functional as F
 from torch.optim import Adam
 
@@ -75,3 +78,27 @@ class BaseDQNLearner(BaseLearner):
     self.q_net.eval()
     self.target_q_net.eval()
     self.training = False
+
+  def save(self, save_dir):
+    model_file_name = os.path.join(save_dir, 'q_net.pth')
+    torch.save(self.q_net.state_dict(), model_file_name)
+
+    state_file_name = os.path.join(save_dir, 'q_net_state.json')
+    with open(state_file_name, 'w') as f:
+      state = {
+        'steps': self._steps,
+        'eps': self.eps,
+      }
+      json.dump(state, f)
+
+  def load(self, load_dir):
+    model_file_name = os.path.join(load_dir, 'q_net.pth')
+    self.q_net.load_state_dict(torch.load(model_file_name))
+    self.target_q_net = deepcopy(self.q_net)
+
+    state_file_name = os.path.join(load_dir, 'q_net_state.json')
+    with open(state_file_name, 'r') as f:
+      state = json.load(f)
+
+      self._steps = state['steps']
+      self.eps = state['eps']

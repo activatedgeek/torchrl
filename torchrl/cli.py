@@ -15,16 +15,13 @@ def parse_args(argv):
   parser.add_argument('--hparam-set', type=str, required=True,
                       help='Hyperparameter set name')
   parser.add_argument('--seed', type=int, metavar='', help='Random seed')
+  parser.add_argument('--progress', action='store_true', dest='progress',
+                      help='Show epoch progress')
+  parser.add_argument('--no-cuda', dest='cuda', action='store_true',
+                      help='Disable CUDA')
 
   parser.add_argument('--usr-dirs', type=str, metavar='', default='',
                       help='Comma-separated list of user module directories')
-
-  parser.add_argument('--cuda', dest='cuda', action='store_true',
-                      help='Enable CUDA')
-  parser.add_argument('--no-cuda', dest='cuda', action='store_false',
-                      help='Disable CUDA')
-  parser.set_defaults(cuda=True)
-
   parser.add_argument('--log-dir', type=str, metavar='', default='log',
                       help='Directory to store logs')
   parser.add_argument('--save-dir', type=str, metavar='',
@@ -34,7 +31,7 @@ def parse_args(argv):
 
   parser.add_argument('--log-interval', type=int, metavar='', default=100,
                       help='Log interval w.r.t epochs')
-  parser.add_argument('--eval-interval', type=int, metavar='', default=500,
+  parser.add_argument('--eval-interval', type=int, metavar='', default=1000,
                       help='Eval interval w.r.t epochs')
   parser.add_argument('--num-eval', type=int, metavar='', default=10,
                       help='Number of evaluations')
