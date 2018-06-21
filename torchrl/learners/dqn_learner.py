@@ -86,8 +86,8 @@ class BaseDQNLearner(BaseLearner):
     state_file_name = os.path.join(save_dir, 'q_net_state.json')
     with open(state_file_name, 'w') as f:
       state = {
-        'steps': self._steps,
-        'eps': self.eps,
+          'steps': self._steps,
+          'eps': self.eps,
       }
       json.dump(state, f)
 

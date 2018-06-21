@@ -37,7 +37,7 @@ def hparam_ppo_pendulum():
 
   params.rollout_steps = 20
   params.num_processes = 16
-  params.num_total_steps = int(3.5e6)
+  params.num_total_steps = int(5e6)
 
   params.batch_size = 64
 

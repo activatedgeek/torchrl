@@ -95,9 +95,9 @@ class Problem(metaclass=abc.ABCMeta):
     runner.stop()
 
     log_avg_reward, log_std_reward = np.average(rewards), np.std(rewards)
-    self.logger.add_scalar('avg eval reward', log_avg_reward,
+    self.logger.add_scalar('eval_episode/avg_reward', log_avg_reward,
                            global_step=epoch)
-    self.logger.add_scalar('std eval reward', log_std_reward,
+    self.logger.add_scalar('eval_episode/std_reward', log_std_reward,
                            global_step=epoch)
 
     return log_avg_reward, log_std_reward
@@ -129,7 +129,7 @@ class Problem(metaclass=abc.ABCMeta):
 
     epoch_iterator = range(1, n_epochs + 1)
     if self.args.progress:
-      epoch_iterator = tqdm(epoch_iterator)
+      epoch_iterator = tqdm(epoch_iterator, unit='epochs')
 
     for epoch in epoch_iterator:
       self.agent.eval()
@@ -142,7 +142,8 @@ class Problem(metaclass=abc.ABCMeta):
 
       if epoch % self.args.log_interval == 0:
         for loss_label, loss_value in loss_dict.items():
-          self.logger.add_scalar(loss_label, loss_value, global_step=epoch)
+          self.logger.add_scalar('loss/{}'.format(loss_label),
+                                 loss_value, global_step=epoch)
 
       log_rollout_steps = 0
 
@@ -157,9 +158,9 @@ class Problem(metaclass=abc.ABCMeta):
           self.agent.reset()
 
           log_n_episodes += 1
-          self.logger.add_scalar('episode length', log_episode_len[i],
+          self.logger.add_scalar('episode/length', log_episode_len[i],
                                  global_step=log_n_episodes)
-          self.logger.add_scalar('episode reward', log_episode_reward[i],
+          self.logger.add_scalar('episode/reward', log_episode_reward[i],
                                  global_step=log_n_episodes)
           log_episode_len[i] = 0
           log_episode_reward[i] = 0
@@ -169,10 +170,10 @@ class Problem(metaclass=abc.ABCMeta):
       if epoch % self.args.log_interval == 0:
         log_rollout_duration = np.average(list(map(lambda x: x['duration'],
                                                    self.runner.get_stats())))
-        self.logger.add_scalar('steps per sec',
+        self.logger.add_scalar('episode/steps per sec',
                                log_rollout_steps / (log_rollout_duration+1e-6),
                                global_step=epoch)
-        self.logger.add_scalar('total timesteps', log_n_timesteps,
+        self.logger.add_scalar('episode/timesteps', log_n_timesteps,
                                global_step=epoch)
 
       if epoch % self.args.eval_interval == 0:
