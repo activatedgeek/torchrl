@@ -32,9 +32,6 @@ class CartPoleDQNProblem(DQNProblem):
         gamma=params.gamma,
         target_update_interval=params.target_update_interval)
 
-    if self.args.cuda:
-      agent.cuda()
-
     return agent
 
 

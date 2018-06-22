@@ -25,9 +25,6 @@ class PendulumPPOProblem(PPOProblem):
         beta=params.beta,
         max_grad_norm=params.max_grad_norm)
 
-    if self.args.cuda:
-      agent.cuda()
-
     return agent
 
 

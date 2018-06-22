@@ -51,10 +51,15 @@ class BaseDDPGLearner(BaseLearner):
     self.tau = tau
     self.noise = OUNoise(self.action_space)
 
-    self.train()
-
     # Internal vars
     self._step = 0
+
+  @property
+  def models(self):
+    return [
+        self.actor, self.target_actor,
+        self.critic, self.target_critic
+    ]
 
   def act(self, obs, **kwargs):
     action = self.actor(obs)
@@ -101,27 +106,6 @@ class BaseDDPGLearner(BaseLearner):
   def reset(self):
     self.noise.reset()
     self._step = 0
-
-  def cuda(self):
-    self.actor.cuda()
-    self.target_actor.cuda()
-    self.critic.cuda()
-    self.target_critic.cuda()
-    self.is_cuda = True
-
-  def train(self):
-    self.actor.train()
-    self.target_actor.train()
-    self.critic.train()
-    self.target_critic.train()
-    self.training = True
-
-  def eval(self):
-    self.actor.eval()
-    self.target_actor.eval()
-    self.critic.eval()
-    self.target_critic.eval()
-    self.training = False
 
   def save(self, save_dir):
     actor_file_name = os.path.join(save_dir, 'actor.pth')

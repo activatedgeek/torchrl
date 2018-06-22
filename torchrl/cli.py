@@ -17,8 +17,10 @@ def parse_args(argv):
   parser.add_argument('--seed', type=int, metavar='', help='Random seed')
   parser.add_argument('--progress', action='store_true', dest='progress',
                       help='Show epoch progress')
-  parser.add_argument('--no-cuda', dest='cuda', action='store_true',
+  parser.add_argument('--no-cuda', dest='no_cuda', action='store_true',
                       help='Disable CUDA')
+  parser.add_argument('--device', type=str, metavar='', default='cuda',
+                      help='Device selection for GPU')
 
   parser.add_argument('--usr-dirs', type=str, metavar='', default='',
                       help='Comma-separated list of user module directories')
@@ -38,8 +40,10 @@ def parse_args(argv):
 
   args = parser.parse_args(args=argv)
 
-  if not torch.cuda.is_available():
-    args.cuda = False
+  args.cuda = not args.no_cuda and torch.cuda.is_available()
+  if not args.cuda:
+    args.device = 'cpu'
+  args.device = torch.device(args.device)
 
   return args
 

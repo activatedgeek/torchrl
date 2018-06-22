@@ -27,12 +27,16 @@ class Problem(metaclass=abc.ABCMeta):
     """
     self.params = params
     self.args = args
-    self.agent = self.init_agent()
-    self.runner = self.make_runner(n_runners=params.num_processes,
-                                   base_seed=args.seed)
+
     self.logger = SummaryWriter(log_dir=args.log_dir)
+
+    self.agent = self.init_agent()
+    self.set_agent_to_device(args.device)
     if args.load_dir:
       self.agent.load(args.load_dir)
+
+    self.runner = self.make_runner(n_runners=params.num_processes,
+                                   base_seed=args.seed)
 
   @abc.abstractmethod
   def init_agent(self) -> BaseLearner:
@@ -68,6 +72,21 @@ class Problem(metaclass=abc.ABCMeta):
     env.close()
     return observation_space, action_space
 
+  def set_agent_train_mode(self, flag: bool = True):
+    """
+    This routine sets the training flag for the models
+    returned by the agent
+    """
+    for model in self.agent.models:
+      model.train(flag)
+
+  def set_agent_to_device(self, device: torch.device):
+    """
+    This routine sends the agent models to desired device
+    """
+    for model in self.agent.models:
+      model.to(device)
+
   @abc.abstractmethod
   def train(self, history_list: list) -> dict:
     """
@@ -83,7 +102,7 @@ class Problem(metaclass=abc.ABCMeta):
     contain the logic for updating the agent's weights
     :return:
     """
-    self.agent.eval()
+    self.set_agent_train_mode(False)
 
     runner = EpisodeRunner(self.make_env(),
                            max_steps=self.params.max_episode_steps)
@@ -106,7 +125,7 @@ class Problem(metaclass=abc.ABCMeta):
     if not self.args.save_dir:
       return
 
-    save_dir = os.path.join(self.args.save_dir, 'epoch-{}'.format(epoch))
+    save_dir = os.path.join(self.args.save_dir, 'checkpoint-{}'.format(epoch))
     os.makedirs(save_dir, exist_ok=True)
     self.agent.save(save_dir)
 
@@ -132,12 +151,12 @@ class Problem(metaclass=abc.ABCMeta):
       epoch_iterator = tqdm(epoch_iterator, unit='epochs')
 
     for epoch in epoch_iterator:
-      self.agent.eval()
+      self.set_agent_train_mode(False)
       history_list = self.runner.collect(self.agent,
                                          steps=params.rollout_steps,
                                          store=True)
 
-      self.agent.train()
+      self.set_agent_train_mode(True)
       loss_dict = self.train(Problem.hist_to_tensor(history_list))
 
       if epoch % self.args.log_interval == 0:

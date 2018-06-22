@@ -24,9 +24,6 @@ class CartPoleA2CProblem(A2CProblem):
         alpha=params.alpha,
         beta=params.beta)
 
-    if self.args.cuda:
-      agent.cuda()
-
     return agent
 
 

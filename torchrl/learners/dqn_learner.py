@@ -34,7 +34,9 @@ class BaseDQNLearner(BaseLearner):
     self._steps = 0
     self.eps = eps_max
 
-    self.train()
+  @property
+  def models(self):
+    return [self.q_net, self.target_q_net]
 
   def act(self, obs):
     actions = self.q_net(obs)
@@ -63,21 +65,6 @@ class BaseDQNLearner(BaseLearner):
       self.target_q_net.load_state_dict(self.q_net.state_dict())
 
     return loss.detach().cpu().item()
-
-  def cuda(self):
-    self.q_net.cuda()
-    self.target_q_net.cuda()
-    self.is_cuda = True
-
-  def train(self):
-    self.q_net.train()
-    self.target_q_net.train()
-    self.training = True
-
-  def eval(self):
-    self.q_net.eval()
-    self.target_q_net.eval()
-    self.training = False
 
   def save(self, save_dir):
     model_file_name = os.path.join(save_dir, 'q_net.pth')

@@ -8,9 +8,18 @@ class BaseLearner(metaclass=abc.ABCMeta):
   """
   def __init__(self, observation_space, action_space):
     self.is_cuda = False
-    self.training = False
     self.observation_space = observation_space
     self.action_space = action_space
+
+  @property
+  def models(self) -> list:
+    """
+    This routine must return the list of trainable
+    networks which external routines might want to
+    generally operate on
+    :return:
+    """
+    raise NotImplementedError
 
   @abc.abstractmethod
   def act(self, *args, **kwargs):
@@ -27,34 +36,6 @@ class BaseLearner(metaclass=abc.ABCMeta):
   def learn(self, *args, **kwargs):
     """
     This method represents the learning step
-    """
-    raise NotImplementedError
-
-  @abc.abstractmethod
-  def cuda(self):
-    """
-    Enable CUDA on the Learner, don't forget to set self.is_cuda
-    :return:
-    """
-    raise NotImplementedError
-
-  @abc.abstractmethod
-  def train(self):
-    """
-    Enable train mode for the agent (helpful with NN
-    agents with BatchNorm, Dropout etc.),
-    don't forget to set self.training appropriately
-    :return:
-    """
-    raise NotImplementedError
-
-  @abc.abstractmethod
-  def eval(self):
-    """
-    Enable evaluation mode for the agent (helpful with
-    NN agents with BatchNorm, Dropout etc.),
-    don't forget to set self.training appropriately
-    :return:
     """
     raise NotImplementedError
 

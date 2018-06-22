@@ -24,7 +24,9 @@ class BaseA2CLearner(BaseLearner):
     self.alpha = alpha
     self.beta = beta
 
-    self.train()
+  @property
+  def models(self):
+    return [self.ac_net]
 
   def act(self, obs):
     _, dist = self.ac_net(obs)
@@ -70,18 +72,6 @@ class BaseA2CLearner(BaseLearner):
     return actor_loss.detach().cpu().item(), \
         critic_loss.detach().cpu().item(), \
         entropy_loss.detach().cpu().item()
-
-  def cuda(self):
-    self.ac_net.cuda()
-    self.is_cuda = True
-
-  def train(self):
-    self.ac_net.train()
-    self.training = True
-
-  def eval(self):
-    self.ac_net.eval()
-    self.training = False
 
   def save(self, save_dir):
     model_file_name = os.path.join(save_dir, 'ac_net.pth')

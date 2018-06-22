@@ -23,9 +23,6 @@ class PendulumDDPGProblem(DDPGProblem):
         gamma=params.gamma,
         tau=params.tau)
 
-    if self.args.cuda:
-      agent.cuda()
-
     return agent
 
 
