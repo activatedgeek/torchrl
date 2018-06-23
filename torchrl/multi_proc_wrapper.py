@@ -17,7 +17,7 @@ def target_fn(conn, obj_fn):
 
     conn.send(result)
 
-    if fn_string == 'stop' or fn_string == 'close':
+    if fn_string == 'close':
       break
 
 
@@ -54,12 +54,25 @@ class MultiProcWrapper:
       if proc.is_alive():
         proc.join()
 
-  def exec_remote(self, fn_string, args=None, kwargs=None, proc=None):
-    if proc is None:
-      for conn in self.p_conn:
-        conn.send((fn_string, args, kwargs))
+  def exec_remote(self, fn_string, proc_list=None,
+                  args_list=None, kwargs_list=None):
+    if proc_list is None:
+      proc_list = list(range(self.n_procs))
+    if args_list is None:
+      args_list = [None] * len(proc_list)
+    if kwargs_list is None:
+      kwargs_list = [None] * len(proc_list)
 
-      return [conn.recv() for conn in self.p_conn]
+    assert len(args_list) == len(proc_list) and \
+           len(kwargs_list) == len(proc_list), \
+        'Argument list mismatch!'
 
-    self.p_conn[proc].send((fn_string, args, kwargs))
-    return self.p_conn[proc].recv()
+    target_p_conn = []
+    for i, p_conn in enumerate(self.p_conn):
+      if i in proc_list:
+        target_p_conn.append(p_conn)
+
+    for conn, args, kwargs in zip(target_p_conn, args_list, kwargs_list):
+      conn.send((fn_string, args, kwargs))
+
+    return [conn.recv() for conn in target_p_conn]

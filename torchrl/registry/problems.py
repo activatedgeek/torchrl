@@ -8,7 +8,7 @@ from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
 from .hparams import HParams
-from .. import MultiEpisodeRunner, EpisodeRunner, CPUReplayBuffer
+from .. import MultiEpisodeRunner, CPUReplayBuffer
 from ..learners import BaseLearner
 from ..utils import set_seeds, minibatch_generator
 
@@ -28,6 +28,8 @@ class Problem(metaclass=abc.ABCMeta):
     self.params = params
     self.args = args
 
+    if os.path.isdir(args.log_dir) and len(os.listdir(args.log_dir)):
+      raise ValueError('Directory "{}" not empty!'.format(args.log_dir))
     self.logger = SummaryWriter(log_dir=args.log_dir)
 
     self.agent = self.init_agent()
@@ -104,16 +106,15 @@ class Problem(metaclass=abc.ABCMeta):
     """
     self.set_agent_train_mode(False)
 
-    runner = EpisodeRunner(self.make_env(),
-                           max_steps=self.params.max_episode_steps)
-    rewards = []
+    eval_runner = self.make_runner(n_runners=1)
+    eval_rewards = []
     for _ in range(self.args.num_eval):
-      runner.reset()
-      _, _, reward_history, _, _ = runner.collect(self.agent, store=True)
-      rewards.append(np.sum(reward_history, axis=0))
-    runner.stop()
+      eval_history = eval_runner.collect(self.agent)
+      _, _, reward_history, _, _ = eval_history[0]
+      eval_rewards.append(np.sum(reward_history, axis=0))
+    eval_runner.close()
 
-    log_avg_reward, log_std_reward = np.average(rewards), np.std(rewards)
+    log_avg_reward, log_std_reward = np.average(eval_rewards), np.std(eval_rewards)
     self.logger.add_scalar('eval_episode/avg_reward', log_avg_reward,
                            global_step=epoch)
     self.logger.add_scalar('eval_episode/std_reward', log_std_reward,
@@ -153,8 +154,7 @@ class Problem(metaclass=abc.ABCMeta):
     for epoch in epoch_iterator:
       self.set_agent_train_mode(False)
       history_list = self.runner.collect(self.agent,
-                                         steps=params.rollout_steps,
-                                         store=True)
+                                         steps=params.rollout_steps)
 
       self.set_agent_train_mode(True)
       loss_dict = self.train(Problem.hist_to_tensor(history_list))
@@ -173,7 +173,6 @@ class Problem(metaclass=abc.ABCMeta):
         log_episode_reward[i] += history[2].sum()
 
         if history[-1][-1] == 1:
-          self.runner.reset(i)
           self.agent.reset()
 
           log_n_episodes += 1
@@ -187,8 +186,7 @@ class Problem(metaclass=abc.ABCMeta):
       log_n_timesteps += log_rollout_steps
 
       if epoch % self.args.log_interval == 0:
-        log_rollout_duration = np.average(list(map(lambda x: x['duration'],
-                                                   self.runner.get_stats())))
+        log_rollout_duration = self.runner.last_rollout_duration
         self.logger.add_scalar('episode/steps per sec',
                                log_rollout_steps / (log_rollout_duration+1e-6),
                                global_step=epoch)
@@ -202,7 +200,7 @@ class Problem(metaclass=abc.ABCMeta):
     self.eval(n_epochs)
     self.save(n_epochs)
 
-    self.runner.stop()
+    self.runner.close()
     self.logger.close()
 
   @staticmethod

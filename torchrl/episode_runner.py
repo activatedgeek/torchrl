@@ -19,17 +19,17 @@ class MultiEnvs(MultiProcWrapper):
   def __init__(self, make_env_fn, n_envs: int = 1, base_seed: int = 0,
                daemon: bool = True, autostart: bool = True):
     obj_fns = [
-        functools.partial(MultiEnvs.make_env, make_env_fn,
+        functools.partial(self.make_env, make_env_fn,
                           None if base_seed is None else base_seed + rank)
         for rank in range(1, n_envs + 1)
     ]
     super(MultiEnvs, self).__init__(obj_fns, daemon=daemon, autostart=autostart)
 
-  def reset(self, env_id: int = None):
-    return self.exec_remote('reset', proc=env_id)
+  def reset(self, env_ids: list):
+    return self.exec_remote('reset', proc_list=env_ids)
 
-  def step(self, *args, **kwargs):
-    return self.exec_remote('step', args=args, kwargs=kwargs)
+  def step(self, env_ids: list, actions: list):
+    return self.exec_remote('step', args_list=actions, proc_list=env_ids)
 
   def close(self):
     self.exec_remote('close')
@@ -42,128 +42,131 @@ class MultiEnvs(MultiProcWrapper):
     return env
 
 
-class EpisodeRunner:
+class MultiEpisodeRunner:
   """
-  EpisodeRunner is a utility wrapper to run episodes on a single
-  Gym-like environment object. Each call to the `run()` method will
-  run one episode for specified number of steps. Call `reset()` to
-  reuse the same object again
+  This class runs environments in separate threads and
+   rolls out the trajectories for consumption
   """
-  def __init__(self, env: gym.Env,
-               max_steps: int = DEFAULT_MAX_STEPS):
-    """
-    :param env: Environment with Gym-like API
-    :param max_steps: Maximum number of steps per episode
-    (useful for non-episodic environments)
-    """
-    self.env = env
+  def __init__(self, make_env_fn, n_runners: int = 1,
+               max_steps: int = DEFAULT_MAX_STEPS,
+               base_seed: int = None, daemon=True, autostart=True):
 
+    self.n_envs = n_runners
     self.max_steps = max_steps
+    self.make_env_fn = make_env_fn
 
-    self._obs = None
-    self._done = False
+    self.observation_space, self.action_space = self.get_gym_spaces()
+    self.multi_envs = MultiEnvs(make_env_fn, n_envs=n_runners, base_seed=base_seed,
+                                daemon=daemon, autostart=autostart)
 
-    # Stats
+    # Internal Vars
+    self.is_discrete = self.action_space.__class__.__name__ == 'Discrete'
+    self._obs = [None] * n_runners
     self._rollout_duration = 0.0
 
-    self.reset()
-
-  def reset(self):
-    """
-    Reset internal state for the `run` method to be reused
-    """
-    self._obs = self.env.reset()
-    self._done = False
-
-    self._rollout_duration = 0.0
-
-  def is_done(self):
-    """
-    :return: True if the episode has ended, False otherwise
-    """
-    return self._done
-
-  def act(self, learner):
-    """
-    This routine is called from the `run` routine every time an action
-    is needed for the environment to step.
-    """
-    with torch.no_grad():
-      obs_tensor = torch.from_numpy(self._obs).unsqueeze(0).float()
-
-      if learner.is_cuda:
-        obs_tensor = obs_tensor.cuda()
-
-      action = learner.act(obs_tensor)
-      return action[0][0]  # `act` is a batch call
-
-  def collect(self, learner: BaseLearner, steps: int = None,
-              render: bool = False, fps: int = 30, store: bool = False):
-    """
-
-    :param learner: An agent of type BaseLearner
-    :param steps: Number of maximum steps in the current rollout
-    :param render: Flag to render the environment, True or False
-    :param fps: Rendering rate of the environment, frames per second
-    if render is True
-    :param store: Flag to store the history of the run
-    :return: batch of transitions
-    """
-    assert not self._done, 'EpisodeRunner has ended. Call .reset() to reuse.'
+  def collect(self, learner: BaseLearner, steps: int = None):
+    """This routine collects trajectories from each environment
+    until a maximum rollout length of `steps`. Not all trajectories
+    might be of the same length if one of the environment reaches a
+    terminal state. It will be flagged for reset during the next batch
+    of rollouts (call to `.collect()`)"""
 
     steps = steps or self.max_steps
 
-    if render:
-      self.env.render()
-      time.sleep(1. / fps)
-
-    is_discrete = self.env.action_space.__class__.__name__ == 'Discrete'
-
-    obs_history, action_history, reward_history, \
-    next_obs_history, done_history = \
-        self.init_run_history(self.env.observation_space, self.env.action_space)
+    history_list = [
+        self.init_run_history(self.observation_space, self.action_space)
+        for _ in range(self.n_envs)
+    ]
 
     rollout_start = time.time()
 
-    while not self._done and steps:
-      action = self.act(learner)
-      next_obs, reward, self._done, _ = self.env.step(action)
+    # Reset environments with no observation
+    batch_reset_ids = self.get_active_envs(invert=True)
+    if batch_reset_ids:
+      new_obs = self.multi_envs.reset(batch_reset_ids)
+      for env_id, obs in zip(batch_reset_ids, new_obs):
+        self._obs[env_id] = obs
 
-      if store:
-        obs_history = np.append(obs_history,
-                                np.expand_dims(self._obs, axis=0), axis=0)
-        action = np.array([[action]]) if is_discrete else \
-            np.expand_dims(action, axis=0)
-        action_history = np.append(action_history, action, axis=0)
-        reward_history = np.append(reward_history, np.array([[reward]]), axis=0)
-        next_obs_history = np.append(next_obs_history,
-                                     np.expand_dims(next_obs, axis=0), axis=0)
-        done_history = np.append(done_history, np.array([[int(self._done)]]),
-                                 axis=0)
+    while steps:
+      batch_act_ids = self.get_active_envs()
+      if not batch_act_ids:
+        break
 
-      self._obs = next_obs
+      obs_list = self.get_obs_list()
+
+      with torch.no_grad():
+        # TODO: device placement?
+        batch_obs_tensor = torch.from_numpy(np.array(obs_list)).float()
+        action_list = learner.act(batch_obs_tensor)
+
+      step_list = self.multi_envs.step(batch_act_ids, action_list)
+
+      for env_id, obs, action, (next_obs, reward, done, _) in zip(
+        batch_act_ids, obs_list, action_list, step_list):
+        history_list[env_id] = self.append_history(obs, action, next_obs, reward, done,
+                                                   history_list[env_id])
+
+        self._obs[env_id] = None if done else next_obs
+
       steps -= 1
-
-      if render:
-        self.env.render()
-        time.sleep(1. / fps)
 
     self._rollout_duration = time.time() - rollout_start
 
-    if store:
-      return obs_history, action_history, reward_history, \
-        next_obs_history, done_history
+    return history_list
 
-  def stop(self):
-    self.env.close()
+  def close(self):
+    self.multi_envs.close()
 
-  def get_stats(self) -> dict:
-    return {
-        'duration': self._rollout_duration,
-    }
+  def get_gym_spaces(self):
+    """
+    A utility function to get observation and actions spaces of a
+    Gym environment
+    """
+    env = self.make_env_fn()
+    observation_space = env.observation_space
+    action_space = env.action_space
+    env.close()
+    return observation_space, action_space
+
+  def append_history(self, obs, action, next_obs, reward, done, target_history):
+    target_history[0] = np.append(target_history[0],
+                                  np.expand_dims(obs, axis=0), axis=0)
+    if self.is_discrete:
+      action = np.expand_dims(action, axis=0)
+    target_history[1] = np.append(target_history[1], action, axis=0)
+    target_history[2] = np.append(target_history[2],
+                                  np.array([[reward]]), axis=0)
+    target_history[3] = np.append(target_history[3],
+                                  np.expand_dims(next_obs, axis=0), axis=0)
+    target_history[4] = np.append(target_history[4],
+                                  np.array([[int(done)]]), axis=0)
+    return target_history
+
+  def get_active_envs(self, invert=False) -> list:
+    """Gets a list of environment IDs whose observations are
+    not None. When invert is True, returns all whose observations
+    are None"""
+
+    target_ids = []
+
+    for env_id, obs in enumerate(self._obs):
+      if invert:
+        if obs is None:
+          target_ids.append(env_id)
+        continue
+
+      if obs is not None:
+        target_ids.append(env_id)
+
+    return target_ids
+
+  def get_obs_list(self) -> list:
+    """Get a numpy array of all active observations"""
+    return list(filter(lambda obs: obs is not None, self._obs))
 
   @staticmethod
-  def init_run_history(observation_space: gym.Space, action_space: gym.Space):
+  def init_run_history(observation_space: gym.Space,
+                       action_space: gym.Space) -> list:
     is_discrete = action_space.__class__.__name__ == 'Discrete'
 
     obs_history = np.empty((0, *observation_space.shape), dtype=np.float)
@@ -174,42 +177,11 @@ class EpisodeRunner:
     next_obs_history = np.empty_like(obs_history)
     done_history = np.empty((0, 1), dtype=np.int)
 
-    return obs_history, action_history, reward_history, \
+    return [
+        obs_history, action_history, reward_history,
         next_obs_history, done_history
-
-
-class MultiEpisodeRunner(MultiProcWrapper):
-  """
-  This class is the parallel version of EpisodeRunner
-  """
-
-  def __init__(self, make_env_fn, max_steps: int = DEFAULT_MAX_STEPS,
-               n_runners=1, base_seed: int = None, daemon=True, autostart=True):
-    obj_fns = [
-        functools.partial(MultiEpisodeRunner.make_runner, make_env_fn,
-                          None if base_seed is None else base_seed + rank,
-                          max_steps=max_steps)
-        for rank in range(1, n_runners + 1)
     ]
-    super(MultiEpisodeRunner, self).__init__(
-        obj_fns, daemon=daemon, autostart=autostart)
 
-  @staticmethod
-  def make_runner(make_env_fn, seed: int = None,
-                  max_steps: int = DEFAULT_MAX_STEPS):
-    env = make_env_fn()
-    if seed is not None:
-      env.seed(seed)
-    return EpisodeRunner(env, max_steps=max_steps)
-
-  def reset(self, env_id: int = None):
-    self.exec_remote('reset', proc=env_id)
-
-  def is_done(self):
-    return self.exec_remote('is_done')
-
-  def collect(self, *args, **kwargs):
-    return self.exec_remote('collect', args=args, kwargs=kwargs)
-
-  def get_stats(self):
-    return self.exec_remote('get_stats')
+  @property
+  def last_rollout_duration(self) -> float:
+    return self._rollout_duration
