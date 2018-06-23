@@ -56,7 +56,8 @@ class MultiEpisodeRunner:
     self.make_env_fn = make_env_fn
 
     self.observation_space, self.action_space = self.get_gym_spaces()
-    self.multi_envs = MultiEnvs(make_env_fn, n_envs=n_runners, base_seed=base_seed,
+    self.multi_envs = MultiEnvs(make_env_fn, n_envs=n_runners,
+                                base_seed=base_seed,
                                 daemon=daemon, autostart=autostart)
 
     # Internal Vars
@@ -64,7 +65,8 @@ class MultiEpisodeRunner:
     self._obs = [None] * n_runners
     self._rollout_duration = 0.0
 
-  def collect(self, learner: BaseLearner, steps: int = None):
+  def collect(self, learner: BaseLearner, device: torch.device,
+              steps: int = None):
     """This routine collects trajectories from each environment
     until a maximum rollout length of `steps`. Not all trajectories
     might be of the same length if one of the environment reaches a
@@ -95,16 +97,17 @@ class MultiEpisodeRunner:
       obs_list = self.get_obs_list()
 
       with torch.no_grad():
-        # TODO: device placement?
-        batch_obs_tensor = torch.from_numpy(np.array(obs_list)).float()
+        batch_obs_tensor = torch.from_numpy(
+            np.array(obs_list)
+        ).float().to(device)
         action_list = learner.act(batch_obs_tensor)
 
       step_list = self.multi_envs.step(batch_act_ids, action_list)
 
       for env_id, obs, action, (next_obs, reward, done, _) in zip(
-        batch_act_ids, obs_list, action_list, step_list):
-        history_list[env_id] = self.append_history(obs, action, next_obs, reward, done,
-                                                   history_list[env_id])
+          batch_act_ids, obs_list, action_list, step_list):
+        history_list[env_id] = self.append_history(
+            obs, action, next_obs, reward, done, history_list[env_id])
 
         self._obs[env_id] = None if done else next_obs
 
