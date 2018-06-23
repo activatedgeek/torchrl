@@ -28,7 +28,7 @@ class Problem(metaclass=abc.ABCMeta):
     self.params = params
     self.args = args
 
-    if os.path.isdir(args.log_dir) and len(os.listdir(args.log_dir)):
+    if os.path.isdir(args.log_dir) and os.listdir(args.log_dir):
       raise ValueError('Directory "{}" not empty!'.format(args.log_dir))
     self.logger = SummaryWriter(log_dir=args.log_dir)
 
@@ -109,12 +109,13 @@ class Problem(metaclass=abc.ABCMeta):
     eval_runner = self.make_runner(n_runners=1)
     eval_rewards = []
     for _ in range(self.args.num_eval):
-      eval_history = eval_runner.collect(self.agent)
+      eval_history = eval_runner.collect(self.agent, self.args.device)
       _, _, reward_history, _, _ = eval_history[0]
       eval_rewards.append(np.sum(reward_history, axis=0))
     eval_runner.close()
 
-    log_avg_reward, log_std_reward = np.average(eval_rewards), np.std(eval_rewards)
+    log_avg_reward, log_std_reward = np.average(eval_rewards), \
+                                     np.std(eval_rewards)
     self.logger.add_scalar('eval_episode/avg_reward', log_avg_reward,
                            global_step=epoch)
     self.logger.add_scalar('eval_episode/std_reward', log_std_reward,
@@ -154,6 +155,7 @@ class Problem(metaclass=abc.ABCMeta):
     for epoch in epoch_iterator:
       self.set_agent_train_mode(False)
       history_list = self.runner.collect(self.agent,
+                                         self.args.device,
                                          steps=params.rollout_steps)
 
       self.set_agent_train_mode(True)
@@ -243,7 +245,8 @@ class DQNProblem(Problem):
     if len(self.buffer) >= self.params.batch_size:
       transition_batch = self.buffer.sample(self.params.batch_size)
       transition_batch = list(zip(*transition_batch))
-      transition_batch = [torch.stack(item) for item in transition_batch]
+      transition_batch = [torch.stack(item).to(self.args.device)
+                          for item in transition_batch]
       value_loss = self.agent.learn(*transition_batch)
       return {'value_loss': value_loss}
     return {}
@@ -266,8 +269,11 @@ class A2CProblem(Problem):
   def train(self, history_list: list):
     # Merge histories across multiple trajectories
     batch_history = Problem.merge_histories(*history_list)
-    returns = torch.cat([self.agent.compute_returns(*history)
-                         for history in history_list], dim=0)
+    batch_history = [item.to(self.args.device) for item in batch_history]
+    returns = torch.cat([
+        self.agent.compute_returns(*history)
+        for history in history_list
+    ], dim=0).to(self.args.device)
 
     actor_loss, critic_loss, entropy_loss = self.agent.learn(*batch_history,
                                                              returns)
@@ -293,6 +299,7 @@ class PPOProblem(Problem):
       for data in minibatch_generator(*batch_history,
                                       returns, log_probs, advantages,
                                       minibatch_size=self.params.batch_size):
+        data = [item.to(self.args.device) for item in data]
         actor_loss, critic_loss, entropy_loss = self.agent.learn(*data)
 
     return {'actor_loss': actor_loss,

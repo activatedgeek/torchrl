@@ -46,9 +46,10 @@ class BaseDQNLearner(BaseLearner):
 
   def learn(self, obs, action, reward, next_obs, done):  # pylint: disable=unused-argument
     current_q_values = self.q_net(obs).gather(1, action)
-    max_next_q_values = self.target_q_net(next_obs)
-    max_next_q_values = max_next_q_values.max(1)[0].unsqueeze(1).detach()
-    expected_q_values = reward + self.gamma * max_next_q_values
+    with torch.no_grad():
+      max_next_q_values = self.target_q_net(next_obs)
+      max_next_q_values = max_next_q_values.max(1)[0].unsqueeze(1)
+      expected_q_values = reward + self.gamma * max_next_q_values
 
     loss = F.mse_loss(current_q_values, expected_q_values)
 
