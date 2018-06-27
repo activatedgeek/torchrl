@@ -24,18 +24,22 @@ $ pip install torchrl
 ```
 $ torchrl -h
 usage: RL Experiment Runner [-h] --problem PROBLEM --hparam-set HPARAM_SET
-                            [--seed] [--progress] [--no-cuda] [--usr-dirs]
-                            [--log-dir] [--save-dir] [--load-dir]
-                            [--log-interval] [--eval-interval] [--num-eval]
+                            [--hparam] [--seed] [--progress] [--no-cuda]
+                            [--device] [--usr-dirs] [--log-dir] [--save-dir]
+                            [--load-dir] [--log-interval] [--eval-interval]
+                            [--num-eval]
 
 optional arguments:
   -h, --help            show this help message and exit
   --problem PROBLEM     Problem name (default: None)
   --hparam-set HPARAM_SET
                         Hyperparameter set name (default: None)
+  --hparam              Comma-separated list of key-value pairs, automatically
+                        handles types int/float/str (default: )
   --seed                Random seed (default: None)
   --progress            Show epoch progress (default: False)
   --no-cuda             Disable CUDA (default: False)
+  --device              Device selection for GPU (default: cuda)
   --usr-dirs            Comma-separated list of user module directories
                         (default: )
   --log-dir             Directory to store logs (default: log)
