@@ -1,4 +1,5 @@
 import argparse
+import ast
 import os
 import sys
 import torch
@@ -14,6 +15,9 @@ def parse_args(argv):
                       help='Problem name')
   parser.add_argument('--hparam-set', type=str, required=True,
                       help='Hyperparameter set name')
+  parser.add_argument('--hparam', type=str, metavar='', default='',
+                      help="""Comma-separated list of key-value pairs,
+                      automatically handles types int/float/str""")
   parser.add_argument('--seed', type=int, metavar='', help='Random seed')
   parser.add_argument('--progress', action='store_true', dest='progress',
                       help='Show epoch progress')
@@ -64,6 +68,21 @@ def main():
     import_usr_dir(usr_dir)
 
   hparams = registry.get_hparam(args.hparam_set)()
+
+  # Automatic type conversion to string/int/float
+  if args.hparam:
+    def handle_hparams(pair_str):
+      key, value = pair_str.split('=', 1)
+      try:
+        value = ast.literal_eval(value)
+      except ValueError:
+        pass
+      return key, value
+
+    extra_hparams = dict(map(handle_hparams,
+                             args.hparam.split(',')))
+    hparams.update(extra_hparams)
+
   problem_cls = registry.get_problem(args.problem)
   problem = problem_cls(hparams, args)
   problem.run()

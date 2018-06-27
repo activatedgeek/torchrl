@@ -18,6 +18,9 @@ class HParams:
       print_str += '{}: {}\n'.format(key, value)
     return print_str
 
+  def update(self, items: dict):
+    self.__dict__.update(items)
+
 
 @registry.register_hparam
 def base():
