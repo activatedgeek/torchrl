@@ -1,3 +1,5 @@
+import gym
+
 import torchrl.registry as registry
 import torchrl.registry.hparams as hparams
 from torchrl.registry.problems import A2CProblem
@@ -6,9 +8,8 @@ from torchrl.learners import BaseA2CLearner
 
 @registry.register_problem('a2c-cartpole-v0')
 class CartPoleA2CProblem(A2CProblem):
-  def __init__(self, params, args):
-    params.env = 'CartPole-v0'
-    super(CartPoleA2CProblem, self).__init__(params, args)
+  def make_env(self):
+    return gym.make('CartPole-v0')
 
   def init_agent(self):
     params = self.params

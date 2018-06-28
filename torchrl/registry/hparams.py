@@ -2,6 +2,9 @@ from . import registry
 
 
 class HParams:
+  def __init__(self, kwargs=None):
+    self.update(kwargs or {})
+
   def __getattr__(self, item):
     return self.__dict__[item]
 

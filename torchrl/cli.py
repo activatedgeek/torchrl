@@ -8,15 +8,23 @@ import importlib
 import torchrl.registry as registry
 
 
+def import_usr_dir(usr_dir):
+  dir_path = os.path.abspath(os.path.expanduser(usr_dir).rstrip("/"))
+  containing_dir, module_name = os.path.split(dir_path)
+  sys.path.insert(0, containing_dir)
+  importlib.import_module(module_name)
+  sys.path.pop(0)
+
+
 def parse_args(argv):
   parser = argparse.ArgumentParser(prog='RL Experiment Runner', formatter_class=argparse.ArgumentDefaultsHelpFormatter)  # pylint: disable=line-too-long
 
-  parser.add_argument('--problem', type=str, required=True,
+  parser.add_argument('--problem', type=str, metavar='', default='',
                       help='Problem name')
-  parser.add_argument('--hparam-set', type=str, required=True,
+  parser.add_argument('--hparam-set', type=str, metavar='', default='',
                       help='Hyperparameter set name')
-  parser.add_argument('--hparam', type=str, metavar='', default='',
-                      help="""Comma-separated list of key-value pairs,
+  parser.add_argument('--extra-hparams', type=str, metavar='', default='',
+                      help="""Comma-separated list of extra key-value pairs,
                       automatically handles types int/float/str""")
   parser.add_argument('--seed', type=int, metavar='', help='Random seed')
   parser.add_argument('--progress', action='store_true', dest='progress',
@@ -30,8 +38,6 @@ def parse_args(argv):
                       help='Comma-separated list of user module directories')
   parser.add_argument('--log-dir', type=str, metavar='', default='log',
                       help='Directory to store logs')
-  parser.add_argument('--save-dir', type=str, metavar='',
-                      help='Directory to store agent')
   parser.add_argument('--load-dir', type=str, metavar='',
                       help='Directory to load agent')
 
@@ -44,34 +50,22 @@ def parse_args(argv):
 
   args = parser.parse_args(args=argv)
 
+  # Import external modules from user directories
+  if args.usr_dirs:
+    for usr_dir in args.usr_dirs.split(','):
+      import_usr_dir(usr_dir)
+  del args.usr_dirs
+
+  # Setup CUDA devices
   args.cuda = not args.no_cuda and torch.cuda.is_available()
   if not args.cuda:
     args.device = 'cpu'
-  args.device = torch.device(args.device)
+  del args.no_cuda
 
-  return args
-
-
-def import_usr_dir(usr_dir):
-  dir_path = os.path.abspath(os.path.expanduser(usr_dir).rstrip("/"))
-  containing_dir, module_name = os.path.split(dir_path)
-  sys.path.insert(0, containing_dir)
-  importlib.import_module(module_name)
-  sys.path.pop(0)
-
-
-def main():
-  args = parse_args(sys.argv[1:])
-
-  # Import external modules containing problems
-  for usr_dir in args.usr_dirs.split(','):
-    import_usr_dir(usr_dir)
-
-  hparams = registry.get_hparam(args.hparam_set)()
-
-  # Automatic type conversion to string/int/float
-  if args.hparam:
-    def handle_hparams(pair_str):
+  # Parse extra hyper parameters with
+  # auto type conversion to string/int/float
+  if args.extra_hparams:
+    def handle_extra_hparams(pair_str):
       key, value = pair_str.split('=', 1)
       try:
         value = ast.literal_eval(value)
@@ -79,12 +73,34 @@ def main():
         pass
       return key, value
 
-    extra_hparams = dict(map(handle_hparams,
-                             args.hparam.split(',')))
-    hparams.update(extra_hparams)
+    args.extra_hparams = dict(map(handle_extra_hparams,
+                                  args.extra_hparams.split(',')))
+  else:
+    args.extra_hparams = {}
+
+  # Expand to absolute paths
+  if args.log_dir:
+    args.log_dir = os.path.abspath(args.log_dir)
+  if args.load_dir:
+    args.load_dir = os.path.abspath(args.load_dir)
+
+  return args
+
+
+def main():
+  args = parse_args(sys.argv[1:])
+
+  if args.load_dir:
+    params, loaded_args = registry.problems.Problem.load_from_dir(args.load_dir)
+    args.__dict__.update(loaded_args.__dict__)
+  else:
+    params = registry.get_hparam(args.hparam_set)()
+    params.update(args.extra_hparams)
 
   problem_cls = registry.get_problem(args.problem)
-  problem = problem_cls(hparams, args)
+  problem = problem_cls(params, args)
+  if args.load_dir:
+    problem.load_latest_checkpoint(args.load_dir)
   problem.run()
 
 
