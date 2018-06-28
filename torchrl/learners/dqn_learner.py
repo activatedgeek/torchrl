@@ -1,5 +1,3 @@
-import os
-import json
 from copy import deepcopy
 import numpy as np
 import torch
@@ -38,6 +36,21 @@ class BaseDQNLearner(BaseLearner):
   def models(self):
     return [self.q_net, self.target_q_net]
 
+  @property
+  def state(self):
+    return {
+        'q_net': self.q_net.state_dict(),
+        'steps': self._steps,
+        'eps': self.eps,
+    }
+
+  @state.setter
+  def state(self, state):
+    self.q_net.load_state_dict(state['q_net'])
+    self.target_q_net = deepcopy(self.q_net)
+    self._steps = state['steps']
+    self.eps = state['eps']
+
   def act(self, obs):
     actions = self.q_net(obs)
     actions = actions.max(dim=1)[1].cpu().numpy()
@@ -66,27 +79,3 @@ class BaseDQNLearner(BaseLearner):
       self.target_q_net.load_state_dict(self.q_net.state_dict())
 
     return loss.detach().cpu().item()
-
-  def save(self, save_dir):
-    model_file_name = os.path.join(save_dir, 'q_net.pth')
-    torch.save(self.q_net.state_dict(), model_file_name)
-
-    state_file_name = os.path.join(save_dir, 'q_net_state.json')
-    with open(state_file_name, 'w') as f:
-      state = {
-          'steps': self._steps,
-          'eps': self.eps,
-      }
-      json.dump(state, f)
-
-  def load(self, load_dir):
-    model_file_name = os.path.join(load_dir, 'q_net.pth')
-    self.q_net.load_state_dict(torch.load(model_file_name))
-    self.target_q_net = deepcopy(self.q_net)
-
-    state_file_name = os.path.join(load_dir, 'q_net_state.json')
-    with open(state_file_name, 'r') as f:
-      state = json.load(f)
-
-      self._steps = state['steps']
-      self.eps = state['eps']

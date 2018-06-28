@@ -21,6 +21,23 @@ class BaseLearner(metaclass=abc.ABCMeta):
     """
     raise NotImplementedError
 
+  @property
+  def state(self) -> object:
+    """
+    This method must return an arbitrary object
+    which defines the complete state of the learner
+    to restore at any point in time
+    """
+    raise NotImplementedError
+
+  @state.setter
+  def state(self, state):
+    """
+    This method must be the complement of
+    `self.state` and restore the state
+    """
+    raise NotImplementedError
+
   @abc.abstractmethod
   def act(self, *args, **kwargs):
     """
@@ -45,22 +62,3 @@ class BaseLearner(metaclass=abc.ABCMeta):
     :return:
     """
     pass
-
-  @abc.abstractmethod
-  def save(self, save_dir):
-    """
-    Store the agent for future usage
-    :param save_dir: The directory to save arbitrary files to
-    :return:
-    """
-    raise NotImplementedError
-
-  @abc.abstractmethod
-  def load(self, load_dir):
-    """
-    Load a pre-trained agent
-    :param load_dir: The directory from a pre-trained agent
-    (must be inverse of save)
-    :return:
-    """
-    raise NotImplementedError

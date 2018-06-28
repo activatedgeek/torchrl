@@ -4,6 +4,10 @@ import numpy as np
 import gym
 import os
 import torch
+import glob
+import yaml
+import cloudpickle
+from copy import deepcopy
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
@@ -18,6 +22,9 @@ class Problem(metaclass=abc.ABCMeta):
   An abstract class which defines functions to define
   any RL problem
   """
+  hparams_file = 'hparams.yaml'
+  args_file = 'args.yaml'
+  checkpoint_prefix = 'checkpoint'
 
   def __init__(self, params: HParams, args: argparse.Namespace):
     """
@@ -28,17 +35,69 @@ class Problem(metaclass=abc.ABCMeta):
     self.params = params
     self.args = args
 
-    if os.path.isdir(args.log_dir) and os.listdir(args.log_dir):
-      raise ValueError('Directory "{}" not empty!'.format(args.log_dir))
-    self.logger = SummaryWriter(log_dir=args.log_dir)
+    self.logger = None
+    self.agent = None
+    self.runner = None
+
+    self.init()
+
+  def init(self):
+    # Initialize logging directory
+    if os.path.isdir(self.args.log_dir) and os.listdir(self.args.log_dir):
+      raise ValueError('Directory "{}" not empty!'.format(self.args.log_dir))
+    os.makedirs(self.args.log_dir, exist_ok=True)
+
+    hparams_file_path = os.path.join(self.args.log_dir,
+                                     self.hparams_file)
+    args_file_path = os.path.join(self.args.log_dir,
+                                  self.args_file)
+
+    with open(hparams_file_path, 'w') as hparams_file, \
+         open(args_file_path, 'w') as args_file:
+
+      # Remove all directory references before dumping
+      args_dict = deepcopy(self.args.__dict__)
+      dir_keys = list(filter(lambda key: 'dir' in key, args_dict.keys()))
+      for key in dir_keys:
+        args_dict.pop(key)
+
+      yaml.dump(self.params.__dict__, stream=hparams_file,
+                default_flow_style=False)
+      yaml.dump(args_dict, stream=args_file,
+                default_flow_style=False)
+
+    self.logger = SummaryWriter(log_dir=self.args.log_dir)
 
     self.agent = self.init_agent()
-    self.set_agent_to_device(args.device)
-    if args.load_dir:
-      self.agent.load(args.load_dir)
+    self.set_agent_to_device(torch.device(self.args.device))
 
-    self.runner = self.make_runner(n_runners=params.num_processes,
-                                   base_seed=args.seed)
+    self.runner = self.make_runner(n_runners=self.params.num_processes,
+                                   base_seed=self.args.seed)
+
+  @staticmethod
+  def load_from_dir(load_dir) -> tuple:
+    hparams_file_path = os.path.join(load_dir,
+                                     Problem.hparams_file)
+    args_file_path = os.path.join(load_dir,
+                                  Problem.args_file)
+
+    with open(hparams_file_path, 'r') as hparams_file, \
+      open(args_file_path, 'r') as args_file:
+      params = HParams(yaml.load(hparams_file))
+      args = argparse.Namespace(**yaml.load(args_file))
+
+    return params, args
+
+  def load_latest_checkpoint(self, load_dir):
+    """
+    This method loads the latest checkpoint from the
+    load directory
+    """
+    checkpoint_files = glob.glob(os.path.join(load_dir,
+                                              self.checkpoint_prefix + '*'))
+    latest_checkpoint = max(checkpoint_files, key=os.path.getctime)
+    with open(latest_checkpoint, 'rb') as checkpoint_file:
+      self.agent.state = cloudpickle.load(checkpoint_file)
 
   @abc.abstractmethod
   def init_agent(self) -> BaseLearner:
@@ -124,12 +183,10 @@ class Problem(metaclass=abc.ABCMeta):
     return log_avg_reward, log_std_reward
 
   def save(self, epoch):
-    if not self.args.save_dir:
-      return
-
-    save_dir = os.path.join(self.args.save_dir, 'checkpoint-{}'.format(epoch))
-    os.makedirs(save_dir, exist_ok=True)
-    self.agent.save(save_dir)
+    checkpoint_file_path = os.path.join(
+        self.args.log_dir, '{}-{}.cpkl'.format(self.checkpoint_prefix, epoch))
+    with open(checkpoint_file_path, 'wb') as checkpoint_file:
+      cloudpickle.dump(self.agent.state, checkpoint_file)
 
   def run(self):
     """

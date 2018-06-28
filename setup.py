@@ -38,7 +38,9 @@ setup(name='torchrl',
         'License :: OSI Approved :: Apache Software License',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
       ],
-      packages=find_packages(),
+      packages=[
+        'torchrl',
+      ],
       install_requires=install_requires,
       extras_require={},
       entry_points={

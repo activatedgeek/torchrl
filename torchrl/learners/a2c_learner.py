@@ -1,4 +1,3 @@
-import os
 import torch
 import torch.nn.functional as F
 from torch.optim import Adam
@@ -27,6 +26,16 @@ class BaseA2CLearner(BaseLearner):
   @property
   def models(self):
     return [self.ac_net]
+
+  @property
+  def state(self):
+    return {
+        'ac_net': self.ac_net.state_dict()
+    }
+
+  @state.setter
+  def state(self, state):
+    self.ac_net.load_state_dict(state['ac_net'])
 
   def act(self, obs):
     _, dist = self.ac_net(obs)
@@ -72,12 +81,3 @@ class BaseA2CLearner(BaseLearner):
     return actor_loss.detach().cpu().item(), \
         critic_loss.detach().cpu().item(), \
         entropy_loss.detach().cpu().item()
-
-  def save(self, save_dir):
-    model_file_name = os.path.join(save_dir, 'ac_net.pth')
-    torch.save(self.ac_net.state_dict(), model_file_name)
-
-
-  def load(self, load_dir):
-    model_file_name = os.path.join(load_dir, 'ac_net.pth')
-    self.ac_net.load_state_dict(torch.load(model_file_name))
