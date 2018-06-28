@@ -1,3 +1,5 @@
+import gym
+
 import torchrl.registry as registry
 import torchrl.registry.hparams as hparams
 from torchrl.registry.problems import PPOProblem
@@ -6,9 +8,8 @@ from torchrl.learners import BasePPOLearner
 
 @registry.register_problem('ppo-pendulum-v0')
 class PendulumPPOProblem(PPOProblem):
-  def __init__(self, params, args):
-    params.env = 'Pendulum-v0'
-    super(PendulumPPOProblem, self).__init__(params, args)
+  def make_env(self):
+    return gym.make('Pendulum-v0')
 
   def init_agent(self):
     params = self.params

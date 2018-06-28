@@ -290,9 +290,6 @@ class DQNProblem(Problem):
 
     self.buffer = CPUReplayBuffer(params.buffer_size)
 
-  def make_env(self):
-    return gym.make(self.params.env)
-
   def train(self, history_list: list):
     # Populate the buffer
     batch_history = Problem.merge_histories(*history_list)
@@ -320,9 +317,6 @@ class DDPGProblem(DQNProblem):
 
 
 class A2CProblem(Problem):
-  def make_env(self):
-    return gym.make(self.params.env)
-
   def train(self, history_list: list):
     # Merge histories across multiple trajectories
     batch_history = Problem.merge_histories(*history_list)
@@ -340,9 +334,6 @@ class A2CProblem(Problem):
 
 
 class PPOProblem(Problem):
-  def make_env(self):
-    return gym.make(self.params.env)
-
   def train(self, history_list: list):
     # Merge histories across multiple trajectories
     batch_history = Problem.merge_histories(*history_list)

@@ -1,3 +1,5 @@
+import gym
+
 import torchrl.registry as registry
 import torchrl.registry.hparams as hparams
 from torchrl.registry.problems import DDPGProblem
@@ -6,9 +8,8 @@ from torchrl.learners import BaseDDPGLearner
 
 @registry.register_problem('ddpg-pendulum-v0')
 class PendulumDDPGProblem(DDPGProblem):
-  def __init__(self, params, args):
-    params.env = 'Pendulum-v0'
-    super(PendulumDDPGProblem, self).__init__(params, args)
+  def make_env(self):
+    return gym.make('Pendulum-v0')
 
   def init_agent(self):
     params = self.params

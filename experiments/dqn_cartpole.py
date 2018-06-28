@@ -1,3 +1,5 @@
+import gym
+
 import torchrl.registry as registry
 import torchrl.registry.hparams as hparams
 from torchrl.registry.problems import DQNProblem
@@ -16,9 +18,8 @@ class CartPoleDQNLearner(BaseDQNLearner):
 
 @registry.register_problem('dqn-cartpole-v1')
 class CartPoleDQNProblem(DQNProblem):
-  def __init__(self, params, args):
-    params.env = 'CartPole-v1'
-    super(CartPoleDQNProblem, self).__init__(params, args)
+  def make_env(self):
+    return gym.make('CartPole-v1')
 
   def init_agent(self):
     params = self.params
