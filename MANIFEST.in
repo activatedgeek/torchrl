@@ -1,1 +1,1 @@
-include LICENSE README.md requirements.txt VERSION
+include LICENSE README.md requirements.txt requirements_dev.txt VERSION

@@ -17,6 +17,9 @@ if CURRENT_PYTHON < MIN_PYTHON:
 with open('requirements.txt', 'r') as f:
     install_requires = f.readlines()
 
+with open('requirements_dev.txt', 'r') as f:
+  dev_install_requires = f.readlines()
+
 with open('VERSION') as f:
     VERSION = f.read().strip()
 
@@ -42,7 +45,9 @@ setup(name='torchrl',
         'torchrl',
       ],
       install_requires=install_requires,
-      extras_require={},
+      extras_require={
+        'dev': dev_install_requires,
+      },
       entry_points={
         'console_scripts': [
           'torchrl=torchrl.cli:main'

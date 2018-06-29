@@ -1,0 +1,71 @@
+torchrl package
+===============
+
+Subpackages
+-----------
+
+.. toctree::
+
+    torchrl.learners
+    torchrl.policies
+    torchrl.registry
+
+Submodules
+----------
+
+torchrl.cli module
+------------------
+
+.. automodule:: torchrl.cli
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+torchrl.episode\_runner module
+------------------------------
+
+.. automodule:: torchrl.episode_runner
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+torchrl.models module
+---------------------
+
+.. automodule:: torchrl.models
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+torchrl.multi\_proc\_wrapper module
+-----------------------------------
+
+.. automodule:: torchrl.multi_proc_wrapper
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+torchrl.storage module
+----------------------
+
+.. automodule:: torchrl.storage
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+torchrl.utils module
+--------------------
+
+.. automodule:: torchrl.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: torchrl
+    :members:
+    :undoc-members:
+    :show-inheritance:
