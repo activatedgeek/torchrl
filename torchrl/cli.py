@@ -6,6 +6,7 @@ import torch
 import importlib
 
 import torchrl.registry as registry
+from torchrl.registry.problems import Problem
 
 
 def import_usr_dir(usr_dir):
@@ -27,9 +28,9 @@ def parse_args(argv):
                       help="""Comma-separated list of extra key-value pairs,
                       automatically handles types int/float/str""")
   parser.add_argument('--seed', type=int, metavar='', help='Random seed')
-  parser.add_argument('--progress', action='store_true', dest='progress',
+  parser.add_argument('--show-progress', action='store_true',
                       help='Show epoch progress')
-  parser.add_argument('--no-cuda', dest='no_cuda', action='store_true',
+  parser.add_argument('--no-cuda', action='store_true',
                       help='Disable CUDA')
   parser.add_argument('--device', type=str, metavar='', default='cuda',
                       help='Device selection for GPU')
@@ -39,7 +40,9 @@ def parse_args(argv):
   parser.add_argument('--log-dir', type=str, metavar='', default='log',
                       help='Directory to store logs')
   parser.add_argument('--load-dir', type=str, metavar='',
-                      help='Directory to load agent')
+                      help='Directory to load agent and resume from')
+  parser.add_argument('--start-epoch', type=int, metavar='',
+                      help='Epoch to start with after a load')
 
   parser.add_argument('--log-interval', type=int, metavar='', default=100,
                       help='Log interval w.r.t epochs')
@@ -87,20 +90,46 @@ def parse_args(argv):
   return args
 
 
+def filter_problem_args(args: argparse.Namespace):
+  """This utility filters ephemeral arguments so that
+  they are not written to the output directory and
+  interfere during loading"""
+  keys = [
+      'extra_hparams',
+      'show_progress',
+      'device',
+      'log_dir',
+      'load_dir',
+      'start_epoch',
+      'cuda',
+  ]
+
+  filtered_args = {}
+  for key in keys:
+    filtered_args[key] = args.__dict__.pop(key)
+
+  return argparse.Namespace(**filtered_args)
+
+
 def main():
-  args = parse_args(sys.argv[1:])
+  problem_args = parse_args(sys.argv[1:])
+  args = filter_problem_args(problem_args)
 
+  # Load parameters and arguments
   if args.load_dir:
-    params, loaded_args = registry.problems.Problem.load_from_dir(args.load_dir)
-    args.__dict__.update(loaded_args.__dict__)
+    hparams, loaded_args = Problem.load_from_dir(args.load_dir)
+    problem_args.__dict__.update(loaded_args.__dict__)
+    args.log_dir = args.load_dir
   else:
-    params = registry.get_hparam(args.hparam_set)()
-    params.update(args.extra_hparams)
+    hparams = registry.get_hparam(problem_args.hparam_set)()
+  hparams.update(args.extra_hparams)
 
-  problem_cls = registry.get_problem(args.problem)
-  problem = problem_cls(params, args)
+  problem_cls = registry.get_problem(problem_args.problem)
+  problem = problem_cls(hparams, problem_args, args.log_dir,
+                        device=args.device,
+                        show_progress=args.show_progress)
   if args.load_dir:
-    problem.load_latest_checkpoint(args.load_dir)
+    problem.load_checkpoint(args.load_dir, args.start_epoch)
   problem.run()
 
 

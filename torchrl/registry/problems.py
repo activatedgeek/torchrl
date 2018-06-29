@@ -1,13 +1,13 @@
 import abc
+import logging
 import argparse
 import numpy as np
 import gym
 import os
 import torch
 import glob
-import yaml
+import ruamel.yaml as yaml
 import cloudpickle
-from copy import deepcopy
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
@@ -26,53 +26,46 @@ class Problem(metaclass=abc.ABCMeta):
   args_file = 'args.yaml'
   checkpoint_prefix = 'checkpoint'
 
-  def __init__(self, params: HParams, args: argparse.Namespace):
-    """
-    The constructor takes in all the parameters needed by
-    the problem.
-    :param params:
-    """
-    self.params = params
-    self.args = args
+  def __init__(self, hparams: HParams,
+               problem_args: argparse.Namespace,
+               log_dir: str,
+               device: str = 'cuda',
+               show_progress: bool = True):
+    self.hparams = hparams
+    self.args = problem_args
+    self.log_dir = log_dir
+    self.show_progress = show_progress
+    self.device = torch.device(device)
 
     self.logger = None
     self.agent = None
     self.runner = None
+    self.start_epoch = 0
 
     self.init()
 
   def init(self):
     # Initialize logging directory
-    if os.path.isdir(self.args.log_dir) and os.listdir(self.args.log_dir):
-      raise ValueError('Directory "{}" not empty!'.format(self.args.log_dir))
-    os.makedirs(self.args.log_dir, exist_ok=True)
+    if os.path.isdir(self.log_dir) and os.listdir(self.log_dir):
+      logging.warning('Directory "%s" not empty!', self.log_dir)
+    os.makedirs(self.log_dir, exist_ok=True)
 
-    hparams_file_path = os.path.join(self.args.log_dir,
+    hparams_file_path = os.path.join(self.log_dir,
                                      self.hparams_file)
-    args_file_path = os.path.join(self.args.log_dir,
+    args_file_path = os.path.join(self.log_dir,
                                   self.args_file)
 
     with open(hparams_file_path, 'w') as hparams_file, \
          open(args_file_path, 'w') as args_file:
-
-      # Remove all directory references before dumping
-      args_dict = deepcopy(self.args.__dict__)
-      dir_keys = list(filter(lambda key: 'dir' in key, args_dict.keys()))
-      for key in dir_keys:
-        args_dict.pop(key)
-
-      yaml.dump(self.params.__dict__, stream=hparams_file,
+      yaml.dump(self.hparams.__dict__, stream=hparams_file,
                 default_flow_style=False)
-      yaml.dump(args_dict, stream=args_file,
+      yaml.dump(self.args.__dict__, stream=args_file,
                 default_flow_style=False)
 
-    self.logger = SummaryWriter(log_dir=self.args.log_dir)
+    self.logger = SummaryWriter(log_dir=self.log_dir)
 
     self.agent = self.init_agent()
-    self.set_agent_to_device(torch.device(self.args.device))
-
-    self.runner = self.make_runner(n_runners=self.params.num_processes,
-                                   base_seed=self.args.seed)
+    self.set_agent_to_device(self.device)
 
   @staticmethod
   def load_from_dir(load_dir) -> tuple:
@@ -88,16 +81,31 @@ class Problem(metaclass=abc.ABCMeta):
 
     return params, args
 
-  def load_latest_checkpoint(self, load_dir):
+  def load_checkpoint(self, load_dir, epoch=None):
     """
     This method loads the latest checkpoint from the
     load directory
     """
-    checkpoint_files = glob.glob(os.path.join(load_dir,
-                                              self.checkpoint_prefix + '*'))
-    latest_checkpoint = max(checkpoint_files, key=os.path.getctime)
-    with open(latest_checkpoint, 'rb') as checkpoint_file:
+    if epoch:
+      checkpoint_file_path = os.path.join(
+          self.log_dir, '{}-{}.cpkl'.format(self.checkpoint_prefix, epoch))
+    else:
+      checkpoint_files = glob.glob(os.path.join(load_dir,
+                                                self.checkpoint_prefix + '*'))
+      checkpoint_file_path = max(checkpoint_files, key=os.path.getctime)
+
+    # Parse epoch from the checkpoint path
+    self.start_epoch = int(os.path.splitext(
+        os.path.basename(checkpoint_file_path))[0].split('-')[1])
+
+    with open(checkpoint_file_path, 'rb') as checkpoint_file:
       self.agent.state = cloudpickle.load(checkpoint_file)
+
+  def save_checkpoint(self, epoch):
+    checkpoint_file_path = os.path.join(
+        self.log_dir, '{}-{}.cpkl'.format(self.checkpoint_prefix, epoch))
+    with open(checkpoint_file_path, 'wb') as checkpoint_file:
+      cloudpickle.dump(self.agent.state, checkpoint_file)
 
   @abc.abstractmethod
   def init_agent(self) -> BaseLearner:
@@ -118,7 +126,7 @@ class Problem(metaclass=abc.ABCMeta):
 
   def make_runner(self, n_runners=1, base_seed=None) -> MultiEpisodeRunner:
     return MultiEpisodeRunner(self.make_env,
-                              max_steps=self.params.max_episode_steps,
+                              max_steps=self.hparams.max_episode_steps,
                               n_runners=n_runners,
                               base_seed=base_seed)
 
@@ -168,7 +176,7 @@ class Problem(metaclass=abc.ABCMeta):
     eval_runner = self.make_runner(n_runners=1)
     eval_rewards = []
     for _ in range(self.args.num_eval):
-      eval_history = eval_runner.collect(self.agent, self.args.device)
+      eval_history = eval_runner.collect(self.agent, self.device)
       _, _, reward_history, _, _ = eval_history[0]
       eval_rewards.append(np.sum(reward_history, axis=0))
     eval_runner.close()
@@ -182,12 +190,6 @@ class Problem(metaclass=abc.ABCMeta):
 
     return log_avg_reward, log_std_reward
 
-  def save(self, epoch):
-    checkpoint_file_path = os.path.join(
-        self.args.log_dir, '{}-{}.cpkl'.format(self.checkpoint_prefix, epoch))
-    with open(checkpoint_file_path, 'wb') as checkpoint_file:
-      cloudpickle.dump(self.agent.state, checkpoint_file)
-
   def run(self):
     """
     This is the entrypoint to a problem class and can be overridden
@@ -195,7 +197,10 @@ class Problem(metaclass=abc.ABCMeta):
     epoch. All variables for statistics are logging with "log_"
     :return:
     """
-    params = self.params
+    self.runner = self.make_runner(n_runners=self.hparams.num_processes,
+                                   base_seed=self.args.seed)
+
+    params = self.hparams
     set_seeds(self.args.seed)
 
     n_epochs = params.num_total_steps // params.rollout_steps // params.num_processes  # pylint: disable=line-too-long
@@ -205,18 +210,19 @@ class Problem(metaclass=abc.ABCMeta):
     log_episode_len = [0] * params.num_processes
     log_episode_reward = [0] * params.num_processes
 
-    epoch_iterator = range(1, n_epochs + 1)
-    if self.args.progress:
+    epoch_iterator = range(self.start_epoch + 1,
+                           self.start_epoch + n_epochs + 1)
+    if self.show_progress:
       epoch_iterator = tqdm(epoch_iterator, unit='epochs')
 
     for epoch in epoch_iterator:
       self.set_agent_train_mode(False)
       history_list = self.runner.collect(self.agent,
-                                         self.args.device,
+                                         self.device,
                                          steps=params.rollout_steps)
 
       self.set_agent_train_mode(True)
-      loss_dict = self.train(Problem.hist_to_tensor(history_list))
+      loss_dict = self.train(self.hist_to_tensor(history_list))
 
       if epoch % self.args.log_interval == 0:
         for loss_label, loss_value in loss_dict.items():
@@ -254,10 +260,10 @@ class Problem(metaclass=abc.ABCMeta):
 
       if epoch % self.args.eval_interval == 0:
         self.eval(epoch)
-        self.save(epoch)
+        self.save_checkpoint(epoch)
 
-    self.eval(n_epochs)
-    self.save(n_epochs)
+    self.eval(self.start_epoch + n_epochs)
+    self.save_checkpoint(self.start_epoch + n_epochs)
 
     self.runner.close()
     self.logger.close()
@@ -285,21 +291,21 @@ class Problem(metaclass=abc.ABCMeta):
 
 
 class DQNProblem(Problem):
-  def __init__(self, params, args):
-    super(DQNProblem, self).__init__(params, args)
+  def __init__(self, hparams, problem_args, *args, **kwargs):
+    super(DQNProblem, self).__init__(hparams, problem_args, *args, **kwargs)
 
-    self.buffer = CPUReplayBuffer(params.buffer_size)
+    self.buffer = CPUReplayBuffer(self.hparams.buffer_size)
 
   def train(self, history_list: list):
     # Populate the buffer
-    batch_history = Problem.merge_histories(*history_list)
+    batch_history = self.merge_histories(*history_list)
     transitions = list(zip(*batch_history))
     self.buffer.extend(transitions)
 
-    if len(self.buffer) >= self.params.batch_size:
-      transition_batch = self.buffer.sample(self.params.batch_size)
+    if len(self.buffer) >= self.hparams.batch_size:
+      transition_batch = self.buffer.sample(self.hparams.batch_size)
       transition_batch = list(zip(*transition_batch))
-      transition_batch = [torch.stack(item).to(self.args.device)
+      transition_batch = [torch.stack(item).to(self.device)
                           for item in transition_batch]
       value_loss = self.agent.learn(*transition_batch)
       return {'value_loss': value_loss}
@@ -319,12 +325,12 @@ class DDPGProblem(DQNProblem):
 class A2CProblem(Problem):
   def train(self, history_list: list):
     # Merge histories across multiple trajectories
-    batch_history = Problem.merge_histories(*history_list)
-    batch_history = [item.to(self.args.device) for item in batch_history]
+    batch_history = self.merge_histories(*history_list)
+    batch_history = [item.to(self.device) for item in batch_history]
     returns = torch.cat([
         self.agent.compute_returns(*history)
         for history in history_list
-    ], dim=0).to(self.args.device)
+    ], dim=0).to(self.device)
 
     actor_loss, critic_loss, entropy_loss = self.agent.learn(*batch_history,
                                                              returns)
@@ -336,18 +342,18 @@ class A2CProblem(Problem):
 class PPOProblem(Problem):
   def train(self, history_list: list):
     # Merge histories across multiple trajectories
-    batch_history = Problem.merge_histories(*history_list)
+    batch_history = self.merge_histories(*history_list)
     data = [self.agent.compute_returns(*history) for history in history_list]
-    returns, log_probs, values = Problem.merge_histories(*data)
+    returns, log_probs, values = self.merge_histories(*data)
     advantages = returns - values
 
     # Train the agent
     actor_loss, critic_loss, entropy_loss = None, None, None
-    for _ in range(self.params.ppo_epochs):
+    for _ in range(self.hparams.ppo_epochs):
       for data in minibatch_generator(*batch_history,
                                       returns, log_probs, advantages,
-                                      minibatch_size=self.params.batch_size):
-        data = [item.to(self.args.device) for item in data]
+                                      minibatch_size=self.hparams.batch_size):
+        data = [item.to(self.device) for item in data]
         actor_loss, critic_loss, entropy_loss = self.agent.learn(*data)
 
     return {'actor_loss': actor_loss,

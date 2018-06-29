@@ -6,4 +6,4 @@ tensorflow~=1.8.0
 tensorboard~=1.8.0
 tensorboardX~=1.1
 tqdm~=4.23.0
-pyyaml~=4.1.0
+ruamel.yaml~=0.15.0

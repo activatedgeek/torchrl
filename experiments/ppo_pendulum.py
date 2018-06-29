@@ -12,19 +12,17 @@ class PendulumPPOProblem(PPOProblem):
     return gym.make('Pendulum-v0')
 
   def init_agent(self):
-    params = self.params
-
     observation_space, action_space = self.get_gym_spaces()
 
     agent = BasePPOLearner(
         observation_space,
         action_space,
-        lr=params.actor_lr,
-        gamma=params.gamma,
-        lmbda=params.lmbda,
-        alpha=params.alpha,
-        beta=params.beta,
-        max_grad_norm=params.max_grad_norm)
+        lr=self.hparams.actor_lr,
+        gamma=self.hparams.gamma,
+        lmbda=self.hparams.lmbda,
+        alpha=self.hparams.alpha,
+        beta=self.hparams.beta,
+        max_grad_norm=self.hparams.max_grad_norm)
 
     return agent
 

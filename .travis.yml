@@ -2,20 +2,34 @@ language: python
 python:
   - "3.6"
 
-if: tag IS present OR \
-    branch = master OR \
-    type = pull_request AND head_branch = master
+cache:
+  pip: true
 
-before_script:
-  - pip install pylint
+stages:
+  - lint
+  - test
+  - deploy
 
-script:
-  - pylint torchrl experiments
-  - pip install .
+jobs:
+  include:
 
-deploy:
-  provider: pypi
-  user: $PYPI_USERNAME
-  password: $PYPI_PASSWORD
-  on:
-    tags: true
+    - stage: lint
+      if: (branch = master) OR (type = pull_request AND head_branch = master)
+      script:
+        - pip install -U pylint
+        - pylint torchrl experiments
+
+    - stage: test
+      if: (branch = master) OR (type = pull_request AND head_branch = master)
+      script:
+        - pip install -U .
+        - echo "TODO!"
+
+    - stage: deploy
+      if: tag IS present
+      deploy:
+        provider: pypi
+        user: $PYPI_USERNAME
+        password: $PYPI_PASSWORD
+        on:
+          tags: true
