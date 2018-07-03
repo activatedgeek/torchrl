@@ -13,10 +13,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import sys
 import sphinx_nameko_theme
-
-sys.path.insert(0, os.path.abspath(__file__ + '/../..'))
 
 # -- Project information -----------------------------------------------------
 
@@ -25,9 +22,9 @@ copyright = '2018, Sanyam Kapoor'
 author = 'Sanyam Kapoor'
 
 # The short X.Y version
-version = '1.3'
+version = os.environ.get('TRAVIS_PULL_REQUEST_BRANCH') or os.environ.get('TRAVIS_BRANCH') or 'dev'
 # The full version, including alpha/beta/rc tags
-release = '1.3.0'
+release = version
 
 
 # -- General configuration ---------------------------------------------------
@@ -48,6 +45,8 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+    'm2r',
+    'sphinxcontrib.programoutput',
     # TODO: 'sphinx_gallery.gen_gallery',
 ]
 
@@ -57,8 +56,7 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
 
 # The master toctree document.
 master_doc = 'index'

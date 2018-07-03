@@ -21,15 +21,14 @@ jobs:
         - pip install -U pylint
         - pylint torchrl experiments
 
-    - stage: test
-      script:
-        - pip install -U .
-        - echo "TODO!"
+#    - stage: test
+#      script:
+#        - pip install .
+#        - echo "TODO!"
 
     - stage: deploy
       script:
-        - pip install -U -r requirements_dev.txt
-        - export PYTHONPATH=$(pwd):$PYTHONPATH
+        - pip install .[dev]
         - pushd docs && make html && popd
         - cp _redirects docs/build/html
       after_success:
