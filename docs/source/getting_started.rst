@@ -1,7 +1,14 @@
 .. toctree::
 
-Getting Started Guide
-======================
+Getting Started
+================
+
+.. hint::
+
+    It might be helpful to take a look at :doc:`concepts`.
+
+
+
 
 TODO. See :doc:`experiments`.
 
