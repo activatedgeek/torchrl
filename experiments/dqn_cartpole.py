@@ -27,6 +27,7 @@ class CartPoleDQNProblem(DQNProblem):
     agent = CartPoleDQNLearner(
         observation_space,
         action_space,
+        double_dqn=self.hparams.double_dqn,
         lr=self.hparams.actor_lr,
         gamma=self.hparams.gamma,
         target_update_interval=self.hparams.target_update_interval)
@@ -47,5 +48,13 @@ def hparam_dqn_cartpole():
   params.buffer_size = 5000
   params.batch_size = 64
   params.num_total_steps = 10000
+
+  return params
+
+@registry.register_hparam('ddqn-cartpole')
+def hparam_ddqn_cartpole():
+  params = hparam_dqn_cartpole()
+
+  params.double_dqn = True
 
   return params

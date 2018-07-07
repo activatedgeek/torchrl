@@ -15,6 +15,18 @@ DQN on CartPole-v1
             --log-dir=log/dqn \
             --show-progress
 
+Double DQN on CartPole-v1
+--------------------------
+
+.. code-block:: bash
+
+    torchrl --problem=dqn-cartpole-v1 \
+            --hparam-set=ddqn-cartpole \
+            --seed=1 \
+            --usr-dirs=experiments \
+            --log-dir=log/ddqn \
+            --show-progress
+
 
 A2C on CartPole-v0
 -------------------

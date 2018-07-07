@@ -82,6 +82,7 @@ def base_ppo():
 def base_dqn():
   params = base()
 
+  params.double_dqn = False
   params.eps_max = 1.0
   params.eps_min = 0.1
   params.target_update_interval = 2
