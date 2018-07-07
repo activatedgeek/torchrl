@@ -1,8 +1,6 @@
 import gym
-
 import torchrl.registry as registry
-import torchrl.registry.hparams as hparams
-from torchrl.registry.problems import PPOProblem
+from torchrl.problems import base_hparams, PPOProblem
 from torchrl.learners import BasePPOLearner
 
 
@@ -29,7 +27,7 @@ class PendulumPPOProblem(PPOProblem):
 
 @registry.register_hparam('ppo-pendulum')
 def hparam_ppo_pendulum():
-  params = hparams.base_ppo()
+  params = base_hparams.base_ppo()
 
   params.rollout_steps = 20
   params.num_processes = 16

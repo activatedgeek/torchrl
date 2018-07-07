@@ -5,6 +5,11 @@ Experiments
 
 A few ready-to-run experiments using the command line interface.
 
+.. warning::
+
+    Make sure you have the ``experiments`` folder from the
+    Github repository `activatedgeek/torchrl <//github.com/activatedgeek/torchrl>`_.
+
 DQN on CartPole-v1
 -------------------
 
@@ -30,7 +35,7 @@ Double DQN on CartPole-v1
             --show-progress
 
 Prioritized DQN on CartPole-v1
--------------------
+-------------------------------
 
 .. code-block:: bash
 
@@ -42,7 +47,7 @@ Prioritized DQN on CartPole-v1
             --show-progress
 
 Prioritized Double DQN on CartPole-v1
--------------------
+--------------------------------------
 
 .. code-block:: bash
 

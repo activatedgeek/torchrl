@@ -1,4 +1,5 @@
 import sys
+import os
 from setuptools import setup, find_packages
 
 CURRENT_PYTHON = sys.version_info[:2]
@@ -20,8 +21,7 @@ with open('requirements.txt', 'r') as f:
 with open('requirements_dev.txt', 'r') as f:
   dev_install_requires = f.readlines()
 
-with open('VERSION') as f:
-    VERSION = f.read().strip()
+VERSION = os.environ.get('TRAVIS_PULL_REQUEST_BRANCH') or os.environ.get('TRAVIS_BRANCH') or 'dev'
 
 with open('README.rst') as f:
     README = f.read()

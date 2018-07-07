@@ -5,7 +5,7 @@ Core Concepts
 
 This document is a glossary for core concepts of *TorchRL* framework.
 
-.. hint::
+.. note::
 
     The documentation for these classes is a work-in-progress. Be sure to
     checkout the source code for details.
@@ -44,7 +44,7 @@ appropriate rollout information.
 Hyper-Parameter Set
 --------------------
 
-A :class:`~torchrl.registry.hparams.HParams` set is a class of arbitrary
+A :class:`~torchrl.registry.problems.HParams` set is a class of arbitrary
 key-value pairs that contain the hyper-parameters for the problem. Keeping
 these as first-class objects in the code base allow for easily reproducible
 experiments.

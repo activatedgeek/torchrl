@@ -8,6 +8,7 @@ Subpackages
 
     torchrl.learners
     torchrl.policies
+    torchrl.problems
     torchrl.registry
     torchrl.storage
 

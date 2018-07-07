@@ -11,11 +11,33 @@ import cloudpickle
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
-from .hparams import HParams
 from .. import MultiEpisodeRunner
 from ..learners import BaseLearner
-from ..storage import ReplayBuffer, PrioritizedReplayBuffer
-from ..utils import set_seeds, minibatch_generator
+from ..utils import set_seeds
+
+
+class HParams:
+  def __init__(self, kwargs=None):
+    self.update(kwargs or {})
+
+  def __getattr__(self, item):
+    return self.__dict__[item]
+
+  def __setattr__(self, key, value):
+    self.__dict__[key] = value
+
+  def __iter__(self):
+    for key, value in self.__dict__.items():
+      yield key, value
+
+  def __repr__(self):
+    print_str = ''
+    for key, value in self:
+      print_str += '{}: {}\n'.format(key, value)
+    return print_str
+
+  def update(self, items: dict):
+    self.__dict__.update(items)
 
 
 class Problem(metaclass=abc.ABCMeta):
@@ -289,106 +311,3 @@ class Problem(metaclass=abc.ABCMeta):
         torch.cat(hist, dim=0)
         for hist in zip(*history_list)
     ])
-
-
-class DQNProblem(Problem):
-  def __init__(self, hparams, problem_args, *args, **kwargs):
-    super(DQNProblem, self).__init__(hparams, problem_args, *args, **kwargs)
-
-    self.buffer = ReplayBuffer(self.hparams.buffer_size)
-
-  def train(self, history_list: list):
-    # Populate the buffer
-    batch_history = self.merge_histories(*history_list)
-    transitions = list(zip(*batch_history))
-    self.buffer.extend(transitions)
-
-    if len(self.buffer) >= self.hparams.batch_size:
-      transition_batch = self.buffer.sample(self.hparams.batch_size)
-      transition_batch = list(zip(*transition_batch))
-      transition_batch = [torch.stack(item).to(self.device)
-                          for item in transition_batch]
-      current_q_values, expected_q_values = \
-        self.agent.compute_q_values(*transition_batch)
-      value_loss = self.agent.learn(*transition_batch,
-                                    current_q_values, expected_q_values)
-      return {'value_loss': value_loss}
-    return {}
-
-
-class PrioritizedDQNProblem(Problem):
-  def __init__(self, hparams, problem_args, *args, **kwargs):
-    super(PrioritizedDQNProblem, self).__init__(
-        hparams, problem_args, *args, **kwargs)
-
-    self.buffer = PrioritizedReplayBuffer(self.hparams.buffer_size)
-
-  def train(self, history_list: list):
-    # Populate the buffer
-    batch_history = self.merge_histories(*history_list)
-    transitions = list(zip(*batch_history))
-    self.buffer.extend(transitions)
-
-    if len(self.buffer) >= self.hparams.batch_size:
-      indices, transition_batch = self.buffer.sample(self.hparams.batch_size)
-      transition_batch = list(zip(*transition_batch))
-      transition_batch = [torch.stack(item).to(self.device)
-                          for item in transition_batch]
-      current_q_values, expected_q_values = \
-        self.agent.compute_q_values(*transition_batch)
-      td_error = (current_q_values - expected_q_values).abs().detach().cpu()
-      value_loss = self.agent.learn(*transition_batch,
-                                    current_q_values, expected_q_values)
-      self.buffer.update_probs(indices, td_error.numpy())
-      return {'value_loss': value_loss}
-    return {}
-
-
-class DDPGProblem(DQNProblem):
-  def train(self, history_list: list):
-    # only overriding to make the return decomposition clear
-    loss_dict = super(DDPGProblem, self).train(history_list)
-    if 'value_loss' in loss_dict:
-      actor_loss, critic_loss = loss_dict['value_loss']
-      return {'actor_loss': actor_loss, 'critic_loss': critic_loss}
-    return {}
-
-
-class A2CProblem(Problem):
-  def train(self, history_list: list):
-    # Merge histories across multiple trajectories
-    batch_history = self.merge_histories(*history_list)
-    batch_history = [item.to(self.device) for item in batch_history]
-    returns = torch.cat([
-        self.agent.compute_returns(*history)
-        for history in history_list
-    ], dim=0).to(self.device)
-
-    actor_loss, critic_loss, entropy_loss = self.agent.learn(*batch_history,
-                                                             returns)
-    return {'actor_loss': actor_loss,
-            'critic_loss': critic_loss,
-            'entropy_loss': entropy_loss}
-
-
-class PPOProblem(Problem):
-  def train(self, history_list: list):
-    # Merge histories across multiple trajectories
-    batch_history = self.merge_histories(*history_list)
-    data = [self.agent.compute_returns(*history) for history in history_list]
-    returns, log_probs, values = self.merge_histories(*data)
-    advantages = returns - values
-
-    # Train the agent
-    actor_loss, critic_loss, entropy_loss = None, None, None
-    for _ in range(self.hparams.ppo_epochs):
-      for data in minibatch_generator(*batch_history,
-                                      returns, log_probs, advantages,
-                                      minibatch_size=self.hparams.batch_size):
-        data = [item.to(self.device) for item in data]
-        actor_loss, critic_loss, entropy_loss = self.agent.learn(*data)
-
-    return {'actor_loss': actor_loss,
-            'critic_loss': critic_loss,
-            'entropy_loss': entropy_loss}
-

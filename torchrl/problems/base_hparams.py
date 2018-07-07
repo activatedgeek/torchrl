@@ -1,33 +1,8 @@
-from . import registry
+from .. import registry
 
 
-class HParams:
-  def __init__(self, kwargs=None):
-    self.update(kwargs or {})
-
-  def __getattr__(self, item):
-    return self.__dict__[item]
-
-  def __setattr__(self, key, value):
-    self.__dict__[key] = value
-
-  def __iter__(self):
-    for key, value in self.__dict__.items():
-      yield key, value
-
-  def __repr__(self):
-    print_str = ''
-    for key, value in self:
-      print_str += '{}: {}\n'.format(key, value)
-    return print_str
-
-  def update(self, items: dict):
-    self.__dict__.update(items)
-
-
-@registry.register_hparam
 def base():
-  params = HParams()
+  params = registry.HParams()
 
   params.num_processes = 1
 
@@ -41,7 +16,6 @@ def base():
   return params
 
 
-@registry.register_hparam
 def base_pg():
   params = base()
 
@@ -54,7 +28,6 @@ def base_pg():
   return params
 
 
-@registry.register_hparam
 def base_ddpg():
   params = base_pg()
 
@@ -66,7 +39,6 @@ def base_ddpg():
   return params
 
 
-@registry.register_hparam
 def base_ppo():
   params = base_pg()
 
@@ -78,7 +50,6 @@ def base_ppo():
   return params
 
 
-@registry.register_hparam
 def base_dqn():
   params = base()
 

@@ -1,8 +1,6 @@
 import gym
-
 import torchrl.registry as registry
-import torchrl.registry.hparams as hparams
-from torchrl.registry.problems import DQNProblem, PrioritizedDQNProblem
+from torchrl.problems import base_hparams, DQNProblem, PrioritizedDQNProblem
 from torchrl.learners import BaseDQNLearner
 
 
@@ -56,7 +54,7 @@ class PrioritizedCartPoleDQNProblem(PrioritizedDQNProblem):
 
 @registry.register_hparam('dqn-cartpole')
 def hparam_dqn_cartpole():
-  params = hparams.base_dqn()
+  params = base_hparams.base_dqn()
 
   params.rollout_steps = 1
   params.num_processes = 1

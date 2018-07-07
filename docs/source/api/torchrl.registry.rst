@@ -4,14 +4,6 @@ torchrl.registry package
 Submodules
 ----------
 
-torchrl.registry.hparams module
--------------------------------
-
-.. automodule:: torchrl.registry.hparams
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 torchrl.registry.problems module
 --------------------------------
 

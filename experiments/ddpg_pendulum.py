@@ -1,8 +1,6 @@
 import gym
-
 import torchrl.registry as registry
-import torchrl.registry.hparams as hparams
-from torchrl.registry.problems import DDPGProblem
+from torchrl.problems import base_hparams, DDPGProblem
 from torchrl.learners import BaseDDPGLearner
 
 
@@ -27,7 +25,7 @@ class PendulumDDPGProblem(DDPGProblem):
 
 @registry.register_hparam('ddpg-pendulum')
 def hparam_ddpg_pendulum():
-  params = hparams.base_ddpg()
+  params = base_hparams.base_ddpg()
 
   params.num_processes = 1
 

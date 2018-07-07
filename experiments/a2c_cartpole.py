@@ -1,8 +1,6 @@
 import gym
-
 import torchrl.registry as registry
-import torchrl.registry.hparams as hparams
-from torchrl.registry.problems import A2CProblem
+from torchrl.problems import base_hparams, A2CProblem
 from torchrl.learners import BaseA2CLearner
 
 
@@ -28,7 +26,7 @@ class CartPoleA2CProblem(A2CProblem):
 
 @registry.register_hparam('a2c-cartpole')
 def hparam_a2c_cartpole():
-  params = hparams.base_pg()
+  params = base_hparams.base_pg()
 
   params.num_processes = 16
 
