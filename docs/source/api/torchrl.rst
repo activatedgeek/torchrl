@@ -9,6 +9,7 @@ Subpackages
     torchrl.learners
     torchrl.policies
     torchrl.registry
+    torchrl.storage
 
 Submodules
 ----------
@@ -41,14 +42,6 @@ torchrl.multi\_proc\_wrapper module
 -----------------------------------
 
 .. automodule:: torchrl.multi_proc_wrapper
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-torchrl.storage module
-----------------------
-
-.. automodule:: torchrl.storage
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,3 +1,5 @@
+.. _experiments:
+
 Experiments
 ============
 
@@ -27,6 +29,29 @@ Double DQN on CartPole-v1
             --log-dir=log/ddqn \
             --show-progress
 
+Prioritized DQN on CartPole-v1
+-------------------
+
+.. code-block:: bash
+
+    torchrl --problem=prioritized-dqn-cartpole-v1 \
+            --hparam-set=dqn-cartpole \
+            --seed=1 \
+            --usr-dirs=experiments \
+            --log-dir=log/dqn \
+            --show-progress
+
+Prioritized Double DQN on CartPole-v1
+-------------------
+
+.. code-block:: bash
+
+    torchrl --problem=prioritized-dqn-cartpole-v1 \
+            --hparam-set=ddqn-cartpole \
+            --seed=1 \
+            --usr-dirs=experiments \
+            --log-dir=log/dqn \
+            --show-progress
 
 A2C on CartPole-v0
 -------------------

@@ -1,5 +1,7 @@
 .. toctree::
 
+.. _getting_started:
+
 Getting Started
 ================
 

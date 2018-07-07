@@ -59,7 +59,7 @@ class BaseDQNLearner(BaseLearner):
     actions = epsilon_greedy(self.action_space.n, actions, self.eps)
     return actions
 
-  def learn(self, obs, action, reward, next_obs, done):  # pylint: disable=unused-argument
+  def compute_q_values(self, obs, action, reward, next_obs, done):  # pylint: disable=unused-argument
     current_q_values = self.q_net(obs).gather(1, action)
 
     with torch.no_grad():
@@ -72,11 +72,15 @@ class BaseDQNLearner(BaseLearner):
 
       expected_q_values = reward + self.gamma * max_next_q_values
 
+    return current_q_values, expected_q_values
+
+  def learn(self, obs, action, reward, next_obs, done,  # pylint: disable=unused-argument
+            current_q_values, expected_q_values):
     loss = F.mse_loss(current_q_values, expected_q_values)
 
+    self.q_net_optim.zero_grad()
     loss.backward()
     self.q_net_optim.step()
-    self.q_net_optim.zero_grad()
 
     self._steps += 1
     self.eps = self.eps_min + \

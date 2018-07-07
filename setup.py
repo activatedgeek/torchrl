@@ -23,13 +23,13 @@ with open('requirements_dev.txt', 'r') as f:
 with open('VERSION') as f:
     VERSION = f.read().strip()
 
-with open('README.md') as f:
+with open('README.rst') as f:
     README = f.read()
 
 setup(name='torchrl',
       description='Reinforcement Learning for PyTorch',
       long_description=README,
-      long_description_content_type='text/markdown',
+      long_description_content_type='text/x-rst',
       version=VERSION,
       url='https://www.github.com/activatedgeek/torchrl',
       author='Sanyam Kapoor',
