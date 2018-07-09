@@ -1,7 +1,6 @@
 from copy import deepcopy
 import numpy as np
 import torch
-import torch.nn.functional as F
 from torch.optim import Adam
 
 from torchrl.learners import BaseLearner
@@ -75,8 +74,8 @@ class BaseDQNLearner(BaseLearner):
     return current_q_values, expected_q_values
 
   def learn(self, obs, action, reward, next_obs, done,  # pylint: disable=unused-argument
-            current_q_values, expected_q_values):
-    loss = F.mse_loss(current_q_values, expected_q_values)
+            td_error):
+    loss = td_error.pow(2).mean()
 
     self.q_net_optim.zero_grad()
     loss.backward()

@@ -11,6 +11,7 @@ Subpackages
     torchrl.problems
     torchrl.registry
     torchrl.storage
+    torchrl.utils
 
 Submodules
 ----------
@@ -43,14 +44,6 @@ torchrl.multi\_proc\_wrapper module
 -----------------------------------
 
 .. automodule:: torchrl.multi_proc_wrapper
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-torchrl.utils module
---------------------
-
-.. automodule:: torchrl.utils
     :members:
     :undoc-members:
     :show-inheritance:

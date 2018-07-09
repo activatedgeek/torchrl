@@ -12,6 +12,14 @@ torchrl.storage.gpu\_replay\_buffer module
     :undoc-members:
     :show-inheritance:
 
+torchrl.storage.prioritized\_replay\_buffer module
+--------------------------------------------------
+
+.. automodule:: torchrl.storage.prioritized_replay_buffer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 torchrl.storage.replay\_buffer module
 -------------------------------------
 

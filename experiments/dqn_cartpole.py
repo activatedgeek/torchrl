@@ -68,9 +68,27 @@ def hparam_dqn_cartpole():
 
   return params
 
+
+@registry.register_hparam('pdqn-cartpole')
+def hparam_pdqn_cartpole():
+  params = hparam_dqn_cartpole()
+
+  params.alpha = 0.6
+  params.beta = 0.4
+
+  return params
+
 @registry.register_hparam('ddqn-cartpole')
 def hparam_ddqn_cartpole():
   params = hparam_dqn_cartpole()
+
+  params.double_dqn = True
+
+  return params
+
+@registry.register_hparam('pddqn-cartpole')
+def hparam_pddqn_cartpole():
+  params = hparam_pdqn_cartpole()
 
   params.double_dqn = True
 

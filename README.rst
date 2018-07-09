@@ -2,6 +2,7 @@ TorchRL
 ========
 
 *Docs*: `<https://torchrl.sanyamkapoor.com>`_
+*Github*: `<https://github.com/activatedgeek/torchrl>`_
 
 .. image:: https://travis-ci.org/activatedgeek/torchrl.svg?branch=master
     :target: https://travis-ci.org/activatedgeek/torchrl

@@ -20,9 +20,11 @@ class DQNProblem(Problem):
       transition_batch = list(zip(*transition_batch))
       transition_batch = [torch.stack(item).to(self.device)
                           for item in transition_batch]
+
       current_q_values, expected_q_values = \
         self.agent.compute_q_values(*transition_batch)
-      value_loss = self.agent.learn(*transition_batch,
-                                    current_q_values, expected_q_values)
+      td_error = expected_q_values - current_q_values
+      value_loss = self.agent.learn(*transition_batch, td_error)
+
       return {'value_loss': value_loss}
     return {}
