@@ -1,9 +1,6 @@
 TorchRL
 ========
 
-*Docs*: `<https://torchrl.sanyamkapoor.com>`_
-*Github*: `<https://github.com/activatedgeek/torchrl>`_
-
 .. image:: https://travis-ci.org/activatedgeek/torchrl.svg?branch=master
     :target: https://travis-ci.org/activatedgeek/torchrl
 
@@ -12,6 +9,10 @@ TorchRL
 
 .. image:: https://img.shields.io/badge/status-beta-green.svg
     :target: https://pypi.org/project/torchrl/
+
++-----------------------------------------------+---------------------------------------------------------+
+| *Docs*: `<https://torchrl.sanyamkapoor.com>`_ | *Github*: `<https://github.com/activatedgeek/torchrl>`_ |
++-----------------------------------------------+---------------------------------------------------------+
 
 *TorchRL* provides highly modular and extensible approach to experimenting with
 Reinforcement Learning. It allows for a registry based approach to running
