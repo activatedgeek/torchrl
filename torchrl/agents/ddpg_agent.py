@@ -4,9 +4,9 @@ import torch.nn.functional as F
 import torch.nn as nn
 from torch.optim import Adam
 
-from torchrl.learners import BaseLearner
-from torchrl.policies import OUNoise
-from torchrl.models import DDPGActorNet, DDPGCriticNet
+from .base_agent import BaseAgent
+from ..policies import OUNoise
+from ..models import DDPGActorNet, DDPGCriticNet
 
 
 def polyak_average_(source, target, tau=1e-3):
@@ -27,13 +27,13 @@ def polyak_average_(source, target, tau=1e-3):
                             (1.0 - tau) * target_param.data)
 
 
-class BaseDDPGLearner(BaseLearner):
+class BaseDDPGAgent(BaseAgent):
   def __init__(self, observation_space, action_space,
                actor_lr=1e-4,
                critic_lr=1e-3,
                gamma=0.99,
                tau=1e-2):
-    super(BaseDDPGLearner, self).__init__(observation_space, action_space)
+    super(BaseDDPGAgent, self).__init__(observation_space, action_space)
 
     self.actor = DDPGActorNet(observation_space.shape[0],
                               action_space.shape[0], 256)

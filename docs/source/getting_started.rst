@@ -34,7 +34,7 @@ is contained below.
       def init_agent(self):
         observation_space, action_space = self.get_gym_spaces()
 
-        agent = CartPoleDQNLearner(
+        agent = CartPoleDQNAgent(
             observation_space,
             action_space,
             double_dqn=self.hparams.double_dqn,
@@ -105,28 +105,28 @@ The :meth:`~torchrl.registry.problems.Problem.make_env` method provides
 the specification on how to create an environment. In this case, we simply
 create a new ``gym.Env`` object by passing the environment ID ``CartPole-v1``.
 
-Initialize Learner/Agent
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Initialize Agent
+^^^^^^^^^^^^^^^^^
 
 The :meth:`~torchrl.registry.problems.Problem.init_agent` method provides
 the specification on how to create a new learning agent. This must return
-a :class:`~torchrl.learners.base_learner.BaseLearner` object. The full code
-is below. We base it off :class:`~torchrl.learners.dqn_learner.BaseDQNLearner`
+a :class:`~torchrl.agents.base_agent.BaseAgent` object. The full code
+is below. We base it off :class:`~torchrl.agents.dqn_agent.BaseDQNAgent`
 from the codebase.
 
 .. code-block:: python
     :linenos:
 
-    class CartPoleDQNLearner(BaseDQNLearner):
+    class CartPoleDQNAgent(BaseDQNAgent):
       def compute_q_values(self, obs, action, reward, next_obs, done):
         for i, _ in enumerate(reward):
           if done[i] == 1:
             reward[i] = -1.0
 
-        return super(CartPoleDQNLearner, self).compute_q_values(
+        return super(CartPoleDQNAgent, self).compute_q_values(
             obs, action, reward, next_obs, done)
 
-The learner created by :meth:`~torchrl.registry.problems.Problem.init_agent`
+The agent created by :meth:`~torchrl.registry.problems.Problem.init_agent`
 utilitizes an class instance attribute ``self.hparams`` which contains
 the hyperparameter set object we created above.
 

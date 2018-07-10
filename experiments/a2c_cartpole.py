@@ -1,7 +1,7 @@
 import gym
 import torchrl.registry as registry
 from torchrl.problems import base_hparams, A2CProblem
-from torchrl.learners import BaseA2CLearner
+from torchrl.agents import BaseA2CAgent
 
 
 @registry.register_problem('a2c-cartpole-v0')
@@ -12,7 +12,7 @@ class CartPoleA2CProblem(A2CProblem):
   def init_agent(self):
     observation_space, action_space = self.get_gym_spaces()
 
-    agent = BaseA2CLearner(
+    agent = BaseA2CAgent(
         observation_space,
         action_space,
         lr=self.hparams.actor_lr,

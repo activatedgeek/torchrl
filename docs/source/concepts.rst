@@ -10,12 +10,12 @@ This document is a glossary for core concepts of *TorchRL* framework.
     The documentation for these classes is a work-in-progress. Be sure to
     checkout the source code for details.
 
-.. _Learner:
+.. _Agent:
 
-Learner
+Agent
 --------------
 
-:class:`Learner <torchrl.learners.base_learner.BaseLearner>` or Agent is an abstract
+:class:`~torchrl.agents.base_agent.BaseAgent` is an abstract
 class which defines the learning agent in the given Environment_.
 
 .. _Environment:
@@ -23,7 +23,7 @@ class which defines the learning agent in the given Environment_.
 Environment
 -------------
 
-Environment is the system which provides feedback to the Learner_. Currently,
+Environment is the system which provides feedback to the Agent_. Currently,
 Open AI `gym.Env` environments are being used. The system is flexible enough
 to extend to any other environment kind.
 
@@ -36,8 +36,8 @@ Problem
 Any task is defined by extending the abstract class
 :class:`~torchrl.registry.problems.Problem`. A problem's entrypoint
 is :meth:`~torchrl.registry.problems.Problem.run` which generates
-the trajectory rollout and call's the Learner_'s
-:meth:`~torchrl.learners.base_learner.BaseLearner.learn` method with
+the trajectory rollout and call's the Agent_'s
+:meth:`~torchrl.agents.base_agent.BaseAgent.learn` method with
 appropriate rollout information.
 
 

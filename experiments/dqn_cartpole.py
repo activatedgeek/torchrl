@@ -1,16 +1,16 @@
 import gym
 import torchrl.registry as registry
 from torchrl.problems import base_hparams, DQNProblem, PrioritizedDQNProblem
-from torchrl.learners import BaseDQNLearner
+from torchrl.agents import BaseDQNAgent
 
 
-class CartPoleDQNLearner(BaseDQNLearner):
+class CartPoleDQNAgent(BaseDQNAgent):
   def compute_q_values(self, obs, action, reward, next_obs, done):
     for i, _ in enumerate(reward):
       if done[i] == 1:
         reward[i] = -1.0
 
-    return super(CartPoleDQNLearner, self).compute_q_values(
+    return super(CartPoleDQNAgent, self).compute_q_values(
         obs, action, reward, next_obs, done)
 
 
@@ -22,7 +22,7 @@ class CartPoleDQNProblem(DQNProblem):
   def init_agent(self):
     observation_space, action_space = self.get_gym_spaces()
 
-    agent = CartPoleDQNLearner(
+    agent = CartPoleDQNAgent(
         observation_space,
         action_space,
         double_dqn=self.hparams.double_dqn,
@@ -41,7 +41,7 @@ class PrioritizedCartPoleDQNProblem(PrioritizedDQNProblem):
   def init_agent(self):
     observation_space, action_space = self.get_gym_spaces()
 
-    agent = CartPoleDQNLearner(
+    agent = CartPoleDQNAgent(
         observation_space,
         action_space,
         double_dqn=self.hparams.double_dqn,

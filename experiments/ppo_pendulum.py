@@ -1,7 +1,7 @@
 import gym
 import torchrl.registry as registry
 from torchrl.problems import base_hparams, PPOProblem
-from torchrl.learners import BasePPOLearner
+from torchrl.agents import BasePPOAgent
 
 
 @registry.register_problem('ppo-pendulum-v0')
@@ -12,7 +12,7 @@ class PendulumPPOProblem(PPOProblem):
   def init_agent(self):
     observation_space, action_space = self.get_gym_spaces()
 
-    agent = BasePPOLearner(
+    agent = BasePPOAgent(
         observation_space,
         action_space,
         lr=self.hparams.actor_lr,

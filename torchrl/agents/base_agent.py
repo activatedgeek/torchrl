@@ -1,9 +1,9 @@
 import abc
 
 
-class BaseLearner(metaclass=abc.ABCMeta):
+class BaseAgent(metaclass=abc.ABCMeta):
   """
-  This is base runner specification which can encapsulate everything
+  This is base agent specification which can encapsulate everything
   how a Reinforcement Learning Algorithm would function.
   """
   def __init__(self, observation_space, action_space):

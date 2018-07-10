@@ -3,12 +3,12 @@ import numpy as np
 import torch
 from torch.optim import Adam
 
-from torchrl.learners import BaseLearner
-from torchrl.policies import epsilon_greedy
-from torchrl.models import QNet
+from .base_agent import BaseAgent
+from ..policies import epsilon_greedy
+from ..models import QNet
 
 
-class BaseDQNLearner(BaseLearner):
+class BaseDQNAgent(BaseAgent):
   def __init__(self, observation_space, action_space,
                double_dqn=False,
                gamma=0.8,
@@ -17,7 +17,7 @@ class BaseDQNLearner(BaseLearner):
                eps_min=0.1,
                temperature=2000.0,
                target_update_interval=5):
-    super(BaseDQNLearner, self).__init__(observation_space, action_space)
+    super(BaseDQNAgent, self).__init__(observation_space, action_space)
 
     self.q_net = QNet(observation_space.shape[0], action_space.n)
     self.target_q_net = deepcopy(self.q_net)

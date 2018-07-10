@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import functools
 
-from torchrl.learners import BaseLearner
+from .agents import BaseAgent
 from torchrl.multi_proc_wrapper import MultiProcWrapper
 
 
@@ -65,7 +65,7 @@ class MultiEpisodeRunner:
     self._obs = [None] * n_runners
     self._rollout_duration = 0.0
 
-  def collect(self, learner: BaseLearner, device: torch.device,
+  def collect(self, learner: BaseAgent, device: torch.device,
               steps: int = None):
     """This routine collects trajectories from each environment
     until a maximum rollout length of `steps`. Not all trajectories

@@ -1,7 +1,7 @@
 import gym
 import torchrl.registry as registry
 from torchrl.problems import base_hparams, DDPGProblem
-from torchrl.learners import BaseDDPGLearner
+from torchrl.agents import BaseDDPGAgent
 
 
 @registry.register_problem('ddpg-pendulum-v0')
@@ -12,7 +12,7 @@ class PendulumDDPGProblem(DDPGProblem):
   def init_agent(self):
     observation_space, action_space = self.get_gym_spaces()
 
-    agent = BaseDDPGLearner(
+    agent = BaseDDPGAgent(
         observation_space,
         action_space,
         actor_lr=self.hparams.actor_lr,
