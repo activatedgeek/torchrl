@@ -1,6 +1,7 @@
 from .. import registry
 
 
+@registry.register_hparam('base')
 def base():
   params = registry.HParams()
 
@@ -9,7 +10,7 @@ def base():
   params.gamma = 0.99
   params.rollout_steps = 100
   params.max_episode_steps = 2500
-  params.num_total_steps = int(1e6)
+  params.num_total_steps = int(1e3)
   params.batch_size = 128
   params.buffer_size = int(1e6)
 

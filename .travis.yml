@@ -29,7 +29,6 @@ jobs:
         - cp _redirects docs/build/html
       after_success:
         - curl -LO https://github.com/netlify/netlifyctl/releases/download/v0.4.0/netlifyctl-linux-amd64-0.4.0.tar.gz && tar -xzvf netlifyctl-linux-amd64-0.4.0.tar.gz
-        # TODO: save all possible releases
         - echo no | ./netlifyctl deploy -n torchrl -A $NETLIFY_ACCESS_TOKEN -P docs/build/html -m "$TRAVIS_COMMIT_MESSAGE" $([[ -z $TRAVIS_PULL_REQUEST_BRANCH && $TRAVIS_BRANCH = "master" ]] && echo "" || echo "-d")
       before_deploy:
         - echo "$TRAVIS_TAG" > VERSION

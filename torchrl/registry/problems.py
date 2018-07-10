@@ -13,7 +13,7 @@ from tensorboardX import SummaryWriter
 
 from .. import MultiEpisodeRunner
 from ..agents import BaseAgent
-from ..utils import set_seeds
+from ..utils import set_seeds, Nop
 
 
 class HParams:
@@ -68,24 +68,27 @@ class Problem(metaclass=abc.ABCMeta):
     self.init()
 
   def init(self):
-    # Initialize logging directory
-    if os.path.isdir(self.log_dir) and os.listdir(self.log_dir):
-      warnings.warn('Directory "{}" not empty!'.format(self.log_dir))
-    os.makedirs(self.log_dir, exist_ok=True)
+    # Initialize logging directory if possible, else a no-op
+    if self.log_dir:
+      if os.path.isdir(self.log_dir) and os.listdir(self.log_dir):
+        warnings.warn('Directory "{}" not empty!'.format(self.log_dir))
+      os.makedirs(self.log_dir, exist_ok=True)
 
-    hparams_file_path = os.path.join(self.log_dir,
-                                     self.hparams_file)
-    args_file_path = os.path.join(self.log_dir,
-                                  self.args_file)
+      hparams_file_path = os.path.join(self.log_dir,
+                                       self.hparams_file)
+      args_file_path = os.path.join(self.log_dir,
+                                    self.args_file)
 
-    with open(hparams_file_path, 'w') as hparams_file, \
-         open(args_file_path, 'w') as args_file:
-      yaml.dump(self.hparams.__dict__, stream=hparams_file,
-                default_flow_style=False)
-      yaml.dump(self.args.__dict__, stream=args_file,
-                default_flow_style=False)
+      with open(hparams_file_path, 'w') as hparams_file, \
+           open(args_file_path, 'w') as args_file:
+        yaml.dump(self.hparams.__dict__, stream=hparams_file,
+                  default_flow_style=False)
+        yaml.dump(self.args.__dict__, stream=args_file,
+                  default_flow_style=False)
 
-    self.logger = SummaryWriter(log_dir=self.log_dir)
+      self.logger = SummaryWriter(log_dir=self.log_dir)
+    else:
+      self.logger = Nop()
 
     self.agent = self.init_agent()
     self.set_agent_to_device(self.device)
@@ -122,13 +125,15 @@ class Problem(metaclass=abc.ABCMeta):
         os.path.basename(checkpoint_file_path))[0].split('-')[1])
 
     with open(checkpoint_file_path, 'rb') as checkpoint_file:
-      self.agent.state = cloudpickle.load(checkpoint_file)
+      self.agent.checkpoint = cloudpickle.load(checkpoint_file)
 
   def save_checkpoint(self, epoch):
-    checkpoint_file_path = os.path.join(
-        self.log_dir, '{}-{}.cpkl'.format(self.checkpoint_prefix, epoch))
-    with open(checkpoint_file_path, 'wb') as checkpoint_file:
-      cloudpickle.dump(self.agent.state, checkpoint_file)
+    agent_state = self.agent.checkpoint
+    if agent_state:
+      checkpoint_file_path = os.path.join(
+          self.log_dir, '{}-{}.cpkl'.format(self.checkpoint_prefix, epoch))
+      with open(checkpoint_file_path, 'wb') as checkpoint_file:
+        cloudpickle.dump(agent_state, checkpoint_file)
 
   @abc.abstractmethod
   def init_agent(self) -> BaseAgent:
@@ -152,17 +157,6 @@ class Problem(metaclass=abc.ABCMeta):
                               max_steps=self.hparams.max_episode_steps,
                               n_runners=n_runners,
                               base_seed=base_seed)
-
-  def get_gym_spaces(self):
-    """
-    A utility function to get observation and actions spaces of a
-    Gym environment
-    """
-    env = self.make_env()
-    observation_space = env.observation_space
-    action_space = env.action_space
-    env.close()
-    return observation_space, action_space
 
   def set_agent_train_mode(self, flag: bool = True):
     """

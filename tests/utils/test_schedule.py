@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from torchrl.utils import LinearSchedule
+from torchrl.utils.schedule import LinearSchedule
 
 
 @pytest.fixture(scope='function')

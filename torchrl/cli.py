@@ -6,7 +6,7 @@ import torch
 import importlib
 
 import torchrl.registry as registry
-from torchrl.registry.problems import Problem
+from torchrl.registry.problems import Problem, HParams
 
 
 def import_usr_dir(usr_dir):
@@ -22,7 +22,7 @@ def parse_args(argv):
 
   parser.add_argument('--problem', type=str, metavar='', default='',
                       help='Problem name')
-  parser.add_argument('--hparam-set', type=str, metavar='', default='',
+  parser.add_argument('--hparam-set', type=str, metavar='', default='base',
                       help='Hyperparameter set name')
   parser.add_argument('--extra-hparams', type=str, metavar='', default='',
                       help="""Comma-separated list of extra key-value pairs,
@@ -37,7 +37,7 @@ def parse_args(argv):
 
   parser.add_argument('--usr-dirs', type=str, metavar='', default='',
                       help='Comma-separated list of user module directories')
-  parser.add_argument('--log-dir', type=str, metavar='', default='log',
+  parser.add_argument('--log-dir', type=str, metavar='', default='',
                       help='Directory to store logs')
   parser.add_argument('--load-dir', type=str, metavar='',
                       help='Directory to load agent and resume from')
@@ -116,12 +116,15 @@ def main():
   args = filter_problem_args(problem_args)
 
   # Load parameters and arguments
+  hparams = HParams()
   if args.load_dir:
-    hparams, loaded_args = Problem.load_from_dir(args.load_dir)
+    loaded_hparams, loaded_args = Problem.load_from_dir(args.load_dir)
     problem_args.__dict__.update(loaded_args.__dict__)
+    hparams.update(loaded_hparams)
     args.log_dir = args.load_dir
-  else:
-    hparams = registry.get_hparam(problem_args.hparam_set)()
+  elif problem_args.hparam_set:
+    get_hparams = registry.get_hparam(problem_args.hparam_set)()
+    hparams.update(get_hparams)
   hparams.update(args.extra_hparams)
 
   problem_cls = registry.get_problem(problem_args.problem)

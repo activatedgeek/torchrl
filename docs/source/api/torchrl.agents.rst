@@ -44,6 +44,14 @@ torchrl.agents.ppo\_agent module
     :undoc-members:
     :show-inheritance:
 
+torchrl.agents.random\_gym\_agent module
+----------------------------------------
+
+.. automodule:: torchrl.agents.random_gym_agent
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

@@ -12,6 +12,14 @@ torchrl.utils.misc module
     :undoc-members:
     :show-inheritance:
 
+torchrl.utils.nop module
+------------------------
+
+.. automodule:: torchrl.utils.nop
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 torchrl.utils.schedule module
 -----------------------------
 

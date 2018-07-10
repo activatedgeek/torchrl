@@ -1,5 +1,6 @@
 import gym
 import torchrl.registry as registry
+import torchrl.utils as utils
 from torchrl.problems import base_hparams, DQNProblem, PrioritizedDQNProblem
 from torchrl.agents import BaseDQNAgent
 
@@ -20,7 +21,7 @@ class CartPoleDQNProblem(DQNProblem):
     return gym.make('CartPole-v1')
 
   def init_agent(self):
-    observation_space, action_space = self.get_gym_spaces()
+    observation_space, action_space = utils.get_gym_spaces(self.make_env)
 
     agent = CartPoleDQNAgent(
         observation_space,
@@ -39,7 +40,7 @@ class PrioritizedCartPoleDQNProblem(PrioritizedDQNProblem):
     return gym.make('CartPole-v1')
 
   def init_agent(self):
-    observation_space, action_space = self.get_gym_spaces()
+    observation_space, action_space = utils.get_gym_spaces(self.make_env)
 
     agent = CartPoleDQNAgent(
         observation_space,

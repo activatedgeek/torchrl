@@ -60,16 +60,16 @@ class BaseDDPGAgent(BaseAgent):
     ]
 
   @property
-  def state(self):
+  def checkpoint(self):
     return {
         'actor': self.actor.state_dict(),
         'critic': self.critic.state_dict(),
     }
 
-  @state.setter
-  def state(self, state):
-    self.actor.load_state_dict(state['actor'])
-    self.critic.load_state_dict(state['critic'])
+  @checkpoint.setter
+  def checkpoint(self, cp):
+    self.actor.load_state_dict(cp['actor'])
+    self.critic.load_state_dict(cp['critic'])
     self.target_actor = deepcopy(self.actor)
     self.target_critic = deepcopy(self.critic)
 

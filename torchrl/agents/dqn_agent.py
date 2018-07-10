@@ -38,19 +38,19 @@ class BaseDQNAgent(BaseAgent):
     return [self.q_net, self.target_q_net]
 
   @property
-  def state(self):
+  def checkpoint(self):
     return {
         'q_net': self.q_net.state_dict(),
         'steps': self._steps,
         'eps': self.eps,
     }
 
-  @state.setter
-  def state(self, state):
-    self.q_net.load_state_dict(state['q_net'])
+  @checkpoint.setter
+  def checkpoint(self, cp):
+    self.q_net.load_state_dict(cp['q_net'])
     self.target_q_net = deepcopy(self.q_net)
-    self._steps = state['steps']
-    self.eps = state['eps']
+    self._steps = cp['steps']
+    self.eps = cp['eps']
 
   def act(self, obs):
     actions = self.q_net(obs)

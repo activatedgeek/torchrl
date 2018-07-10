@@ -28,14 +28,14 @@ class BaseA2CAgent(BaseAgent):
     return [self.ac_net]
 
   @property
-  def state(self):
+  def checkpoint(self):
     return {
         'ac_net': self.ac_net.state_dict()
     }
 
-  @state.setter
-  def state(self, state):
-    self.ac_net.load_state_dict(state['ac_net'])
+  @checkpoint.setter
+  def checkpoint(self, cp):
+    self.ac_net.load_state_dict(cp['ac_net'])
 
   def act(self, obs):
     _, dist = self.ac_net(obs)

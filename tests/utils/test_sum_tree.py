@@ -2,7 +2,7 @@
 
 import pytest
 import random
-from torchrl.utils import SumTree
+from torchrl.utils.sum_tree import SumTree
 
 
 @pytest.fixture(scope='function')

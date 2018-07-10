@@ -22,16 +22,16 @@ class BaseAgent(metaclass=abc.ABCMeta):
     raise NotImplementedError
 
   @property
-  def state(self) -> object:
+  def checkpoint(self) -> object:
     """
     This method must return an arbitrary object
-    which defines the complete state of the learner
+    which defines the complete state of the agent
     to restore at any point in time
     """
     raise NotImplementedError
 
-  @state.setter
-  def state(self, state):
+  @checkpoint.setter
+  def checkpoint(self, cp):
     """
     This method must be the complement of
     `self.state` and restore the state
@@ -50,7 +50,7 @@ class BaseAgent(metaclass=abc.ABCMeta):
     raise NotImplementedError
 
   @abc.abstractmethod
-  def learn(self, *args, **kwargs):
+  def learn(self, *args, **kwargs) -> dict:
     """
     This method represents the learning step
     """
