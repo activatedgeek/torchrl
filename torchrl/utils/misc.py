@@ -1,8 +1,19 @@
+import os
+import sys
+import importlib
 import torch
 import numpy as np
 import random
 import gym
 from typing import Callable, Tuple
+
+
+def import_usr_dir(usr_dir):
+  dir_path = os.path.abspath(os.path.expanduser(usr_dir).rstrip("/"))
+  containing_dir, module_name = os.path.split(dir_path)
+  sys.path.insert(0, containing_dir)
+  importlib.import_module(module_name)
+  sys.path.pop(0)
 
 
 def set_seeds(seed):

@@ -4,6 +4,14 @@ torchrl.utils package
 Submodules
 ----------
 
+torchrl.utils.cli module
+------------------------
+
+.. automodule:: torchrl.utils.cli
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 torchrl.utils.misc module
 -------------------------
 

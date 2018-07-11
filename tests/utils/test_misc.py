@@ -1,5 +1,14 @@
+import os
+import sys
 import gym
-from torchrl.utils.misc import get_gym_spaces
+from torchrl.utils.misc import get_gym_spaces, import_usr_dir
+
+
+def test_import_usr_dir():
+  usr_dir = os.path.dirname(__file__)
+  import_usr_dir(usr_dir)
+
+  assert os.path.dirname(usr_dir) not in sys.path
 
 
 def test_gym_spaces():

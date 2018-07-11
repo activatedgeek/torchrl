@@ -17,15 +17,14 @@ class PrioritizedReplayBuffer(ReplayBuffer):
     self.beta = LinearSchedule(min_val=beta, max_val=1.0, num_steps=num_steps)
     self.probs = deque(maxlen=size)
 
-    self._max_prob = epsilon
-
   def push(self, item):
     super(PrioritizedReplayBuffer, self).push(item)
-    self.probs.append(self._max_prob)
+    self.probs.append(self.compute_max_prob())
 
   def extend(self, *items):
     super(PrioritizedReplayBuffer, self).extend(*items)
-    self.probs.extend([self._max_prob] * len(items))
+    max_prob = self.compute_max_prob()
+    self.probs.extend([max_prob] * len(items))
 
   def clear(self):
     super(PrioritizedReplayBuffer, self).clear()
@@ -52,4 +51,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
     updated_probs[indices] = np.squeeze(new_prob, axis=-1)
 
     self.probs = deque(updated_probs, maxlen=self.size)
-    self._max_prob = max(self._max_prob, np.max(new_prob).item())
+
+  def compute_max_prob(self):
+    max_prob = max(self.probs) if self.probs else 1.0
+    return max_prob

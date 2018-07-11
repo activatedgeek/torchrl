@@ -129,7 +129,7 @@ class Problem(metaclass=abc.ABCMeta):
 
   def save_checkpoint(self, epoch):
     agent_state = self.agent.checkpoint
-    if agent_state:
+    if self.log_dir and agent_state:
       checkpoint_file_path = os.path.join(
           self.log_dir, '{}-{}.cpkl'.format(self.checkpoint_prefix, epoch))
       with open(checkpoint_file_path, 'wb') as checkpoint_file:
@@ -279,8 +279,9 @@ class Problem(metaclass=abc.ABCMeta):
         self.eval(epoch)
         self.save_checkpoint(epoch)
 
-    self.eval(self.start_epoch + n_epochs)
-    self.save_checkpoint(self.start_epoch + n_epochs)
+    if self.start_epoch + n_epochs % self.args.eval_interval is not 0:
+      self.eval(self.start_epoch + n_epochs)
+      self.save_checkpoint(self.start_epoch + n_epochs)
 
     self.runner.close()
     self.logger.close()

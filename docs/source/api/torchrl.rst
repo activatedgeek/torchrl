@@ -16,14 +16,6 @@ Subpackages
 Submodules
 ----------
 
-torchrl.cli module
-------------------
-
-.. automodule:: torchrl.cli
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 torchrl.episode\_runner module
 ------------------------------
 

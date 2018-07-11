@@ -9,20 +9,19 @@ class QNet(nn.Module):
 
     self._input_size = input_size
     self._output_size = output_size
+    self._hidden_size = 128
 
     self.net = nn.Sequential(
-        nn.Linear(self._input_size, 512),
+        nn.Linear(self._input_size, self._hidden_size),
         nn.ReLU(),
-        nn.Linear(512, self._output_size)
+        nn.Linear(self._hidden_size, self._hidden_size),
+        nn.ReLU(),
+        nn.Linear(self._hidden_size, self._output_size)
     )
 
   def forward(self, obs):
     values = self.net(obs)
     return values
-
-  def _init_weights(self):
-    nn.init.xavier_uniform_(self.net[0].weight)
-    nn.init.xavier_uniform_(self.net[2].weight)
 
 
 class DDPGActorNet(nn.Module):

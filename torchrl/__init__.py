@@ -1,1 +1,1 @@
-from torchrl.episode_runner import MultiEpisodeRunner
+from .episode_runner import MultiEpisodeRunner

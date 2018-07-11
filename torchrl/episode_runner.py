@@ -6,7 +6,7 @@ import functools
 
 from .agents import BaseAgent
 from .utils import get_gym_spaces
-from torchrl.multi_proc_wrapper import MultiProcWrapper
+from .multi_proc_wrapper import MultiProcWrapper
 
 
 DEFAULT_MAX_STEPS = int(1e6)

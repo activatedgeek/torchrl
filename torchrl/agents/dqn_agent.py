@@ -1,21 +1,21 @@
 from copy import deepcopy
-import numpy as np
 import torch
 from torch.optim import Adam
 
 from .base_agent import BaseAgent
 from ..policies import epsilon_greedy
 from ..models import QNet
+from ..utils import ExpDecaySchedule
 
 
 class BaseDQNAgent(BaseAgent):
   def __init__(self, observation_space, action_space,
                double_dqn=False,
-               gamma=0.8,
-               lr=1e-4,
+               gamma=0.99,
+               lr=1e-3,
                eps_max=1.0,
-               eps_min=0.1,
-               temperature=2000.0,
+               eps_min=0.01,
+               num_eps_steps=1000,
                target_update_interval=5):
     super(BaseDQNAgent, self).__init__(observation_space, action_space)
 
@@ -25,13 +25,11 @@ class BaseDQNAgent(BaseAgent):
 
     self.double_dqn = double_dqn
     self.gamma = gamma
-    self.eps_max = eps_max
-    self.eps_min = eps_min
-    self.temperature = temperature
     self.target_update_interval = target_update_interval
 
     self._steps = 0
-    self.eps = eps_max
+    self.eps = ExpDecaySchedule(start=eps_max, end=eps_min,
+                                num_steps=num_eps_steps)
 
   @property
   def models(self):
@@ -55,21 +53,22 @@ class BaseDQNAgent(BaseAgent):
   def act(self, obs):
     actions = self.q_net(obs)
     actions = actions.max(dim=1)[1].cpu().numpy()
-    actions = epsilon_greedy(self.action_space.n, actions, self.eps)
+    actions = epsilon_greedy(self.action_space.n, actions, self.eps.value)
     return actions
 
-  def compute_q_values(self, obs, action, reward, next_obs, done):  # pylint: disable=unused-argument
+  def compute_q_values(self, obs, action, reward, next_obs, done):
     current_q_values = self.q_net(obs).gather(1, action)
 
     with torch.no_grad():
       if self.double_dqn:
         _, next_actions = self.q_net(next_obs).max(1, keepdim=True)
-        max_next_q_values = self.target_q_net(next_obs).gather(1, next_actions)
+        next_q_values = self.target_q_net(next_obs).gather(1, next_actions)
       else:
-        max_next_q_values = self.target_q_net(next_obs)
-        max_next_q_values = max_next_q_values.max(1)[0].unsqueeze(1)
+        next_q_values = self.target_q_net(next_obs)
+        next_q_values = next_q_values.max(1)[0].unsqueeze(1)
 
-      expected_q_values = reward + self.gamma * max_next_q_values
+      expected_q_values = reward + \
+                          self.gamma * next_q_values * (1.0 - done.float())
 
     return current_q_values, expected_q_values
 
@@ -82,10 +81,6 @@ class BaseDQNAgent(BaseAgent):
     self.q_net_optim.step()
 
     self._steps += 1
-    self.eps = self.eps_min + \
-           (self.eps_max - self.eps_min) * \
-               np.exp(-float(self._steps) * 1. / self.temperature)
-
     if self._steps % self.target_update_interval == 0:
       self.target_q_net.load_state_dict(self.q_net.state_dict())
 

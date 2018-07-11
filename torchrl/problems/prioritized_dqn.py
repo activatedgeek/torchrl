@@ -11,7 +11,7 @@ class PrioritizedDQNProblem(Problem):
     self.buffer = PrioritizedReplayBuffer(self.hparams.buffer_size,
                                           alpha=hparams.alpha,
                                           beta=hparams.beta,
-                                          num_steps=hparams.num_total_steps)
+                                          num_steps=hparams.beta_anneal_steps)
 
   def train(self, history_list: list):
     # Populate the buffer

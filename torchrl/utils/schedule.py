@@ -1,4 +1,5 @@
 import abc
+import math
 
 class Schedule(metaclass=abc.ABCMeta):
   @abc.abstractmethod
@@ -47,3 +48,24 @@ class LinearSchedule(Schedule):
       self.val = max(self.val, self.min_val)
     else:
       self.val = min(self.val, self.max_val)
+
+
+class ExpDecaySchedule(Schedule):
+  def __init__(self, start=1.0, end=1e-2, num_steps=1000):
+    super(ExpDecaySchedule, self).__init__()
+
+    self.start = start
+    self.end = end
+    self.num_steps = num_steps
+
+    self.val = start
+    self.cur_step = 0
+
+  @property
+  def wrapped_value(self):
+    return self.val
+
+  def step(self):
+    self.cur_step += 1
+    self.val = self.end + \
+               (self.start - self.end) * math.exp(-self.cur_step/self.num_steps)
