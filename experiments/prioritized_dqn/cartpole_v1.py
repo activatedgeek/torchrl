@@ -4,11 +4,11 @@ import torchrl.utils as utils
 from torchrl.problems import PrioritizedDQNProblem
 from torchrl.agents import BaseDQNAgent
 
-from ..dqn.cartpole_v1 import hparam_dqn_cartpole
+from ..dqn.cartpole_v1 import DQNCartpole
 
 
-@registry.register_problem('prioritized-dqn-cartpole-v1')
-class PrioritizedCartPoleDQNProblem(PrioritizedDQNProblem):
+@registry.register_problem
+class PERCartpole(PrioritizedDQNProblem):
   def make_env(self):
     return gym.make('CartPole-v1')
 
@@ -26,13 +26,12 @@ class PrioritizedCartPoleDQNProblem(PrioritizedDQNProblem):
 
     return agent
 
+  @staticmethod
+  def hparams_per_cartpole():
+    params = DQNCartpole.hparams_dqn_cartpole()
 
-@registry.register_hparam('per-dqn-cartpole')
-def hparam_per_dqn_cartpole():
-  params = hparam_dqn_cartpole()
+    params.alpha = 0.6
+    params.beta = 0.4
+    params.beta_anneal_steps = 1000
 
-  params.alpha = 0.6
-  params.beta = 0.4
-  params.beta_anneal_steps = 1000
-
-  return params
+    return params

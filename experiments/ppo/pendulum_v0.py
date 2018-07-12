@@ -5,8 +5,8 @@ from torchrl.problems import base_hparams, PPOProblem
 from torchrl.agents import BasePPOAgent
 
 
-@registry.register_problem('ppo-pendulum-v0')
-class PendulumPPOProblem(PPOProblem):
+@registry.register_problem
+class PPOPendulum(PPOProblem):
   def make_env(self):
     return gym.make('Pendulum-v0')
 
@@ -25,26 +25,25 @@ class PendulumPPOProblem(PPOProblem):
 
     return agent
 
+  @staticmethod
+  def hparams_ppo_pendulum():
+    params = base_hparams.base_ppo()
 
-@registry.register_hparam('ppo-pendulum')
-def hparam_ppo_pendulum():
-  params = base_hparams.base_ppo()
+    params.rollout_steps = 20
+    params.num_processes = 16
+    params.num_total_steps = int(5e6)
 
-  params.rollout_steps = 20
-  params.num_processes = 16
-  params.num_total_steps = int(5e6)
+    params.batch_size = 64
 
-  params.batch_size = 64
+    params.actor_lr = 3e-4
 
-  params.actor_lr = 3e-4
+    params.alpha = 0.5
+    params.gamma = 0.99
+    params.beta = 1e-3
+    params.lmbda = 0.95
 
-  params.alpha = 0.5
-  params.gamma = 0.99
-  params.beta = 1e-3
-  params.lmbda = 0.95
+    params.clip_ratio = 0.2
+    params.max_grad_norm = 1.0
+    params.ppo_epochs = 4
 
-  params.clip_ratio = 0.2
-  params.max_grad_norm = 1.0
-  params.ppo_epochs = 4
-
-  return params
+    return params

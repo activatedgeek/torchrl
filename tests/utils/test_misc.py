@@ -1,7 +1,7 @@
 import os
 import sys
 import gym
-from torchrl.utils.misc import get_gym_spaces, import_usr_dir
+from torchrl.utils.misc import get_gym_spaces, import_usr_dir, to_camel_case
 
 
 def test_import_usr_dir():
@@ -19,3 +19,10 @@ def test_gym_spaces():
 
   assert isinstance(observation_space, gym.Space)
   assert isinstance(action_space, gym.Space)
+
+
+def test_camel_case():
+  assert to_camel_case('A2C4') == 'a2c4'
+  assert to_camel_case('ABC') == 'abc'
+  assert to_camel_case('DoesThisWork') == 'does_this_work'
+  assert to_camel_case('doesThisAlsoWork') == 'does_this_also_work'

@@ -1,11 +1,22 @@
 import os
 import sys
+import re
 import importlib
 import torch
 import numpy as np
 import random
 import gym
 from typing import Callable, Tuple
+
+
+# @NOTE: https://stackoverflow.com/a/1176023/2425365
+first_cap_re = re.compile('(.)([A-Z][a-z]+)')
+all_cap_re = re.compile('([a-z])([A-Z])')
+
+
+def to_camel_case(name: str):
+  cap_sub = first_cap_re.sub(r'\1_\2', name)
+  return all_cap_re.sub(r'\1_\2', cap_sub).lower()
 
 
 def import_usr_dir(usr_dir):

@@ -26,15 +26,15 @@ is contained below.
 .. code-block:: python
     :linenos:
 
-    @registry.register_problem('dqn-cartpole-v1')
-    class CartPoleDQNProblem(DQNProblem):
+    @registry.register_problem
+    class DQNCartpole(DQNProblem):
       def make_env(self):
         return gym.make('CartPole-v1')
 
       def init_agent(self):
-        observation_space, action_space = self.get_gym_spaces()
+        observation_space, action_space = utils.get_gym_spaces(self.make_env)
 
-        agent = CartPoleDQNAgent(
+        agent = BaseDQNAgent(
             observation_space,
             action_space,
             double_dqn=self.hparams.double_dqn,
@@ -44,14 +44,24 @@ is contained below.
 
         return agent
 
-Lastly, each such problem must be registered with a unique name
-using the :meth:`~torchrl.registry.registry.register_problem` decorator as
+      ...
+
+Lastly, each such problem must be registered using the
+:meth:`~torchrl.registry.registry.register_problem` decorator as
 
 .. code-block:: python
 
-    @registry.register_problem('dqn-cartpole-v1')
+    @registry.register_problem
 
-It is then possible to use the CLI_ argument ``--problem=dqn-cartpole-v1``.
+This will take the class name, convert it to camel case and store
+in the registry. One can also optionally provide the name as
+
+.. code-block:: python
+
+    @registry.register_problem('my_dqn_problem')
+
+It is then possible to use the CLI_ argument ``--problem=dqn_cartpole``
+(or ``--problem=my_dqn_problem`` if custom name used).
 
 Register Hyperparameter Set
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -64,21 +74,36 @@ are arbitrary key-value pairs containing primitive values.
 .. code-block:: python
     :linenos:
 
-    @registry.register_hparam('dqn-cartpole')
-    def hparam_dqn_cartpole():
-      params = base_hparams.base_dqn()
+    @registry.register_problem
+    class DQNCartpole(DQNProblem):
 
-      params.rollout_steps = 1
-      params.num_processes = 1
-      params.actor_lr = 1e-3
-      params.gamma = 0.8
-      params.target_update_interval = 5
-      params.eps_min = 0.15
-      params.buffer_size = 5000
-      params.batch_size = 64
-      params.num_total_steps = 10000
+      ...
 
-      return params
+      @staticmethod
+      def hparams_dqn_cartpole():
+        params = base_hparams.base_dqn()
+
+        params.rollout_steps = 1
+        params.num_processes = 1
+        params.actor_lr = 1e-3
+        params.gamma = 0.99
+        params.target_update_interval = 10
+        params.eps_min = 1e-2
+        params.buffer_size = 1000
+        params.batch_size = 32
+        params.num_total_steps = 10000
+        params.num_eps_steps = 500
+
+        return params
+
+      @staticmethod
+      def hparams_double_dqn_cartpole():
+        params = DQNCartpole.hparams_dqn_cartpole()
+
+        params.double_dqn = True
+        params.target_update_interval = 5
+
+        return params
 
 In this case, we start from a base hyperparameter set :meth:`~torchrl.problems.base_hparams.base_dqn`
 provided by ``torchrl`` and override a few parameters like the learning rate
@@ -92,11 +117,17 @@ decorator as
 
 .. code-block:: python
 
-    @registry.register_hparam('dqn-cartpole')
+    @registry.register_hparam # or @registry.register_hparam('my_hparam_set')
 
-It is then possible to use the CLI_ argument ``--hparam-set=dqn-cartpole``.
-This registry based approach makes hyperparameters composable and trackable
-for reproducibility.
+However, for ease of use, ``torchrl`` automatically registers and ``static``
+methods of a Problem class which start with ``hparams_``. This also adds an
+extra association with the problem which is helpful to discover all hyper-parameter
+sets associated with a problem. The HParams set is registered without the
+``hparams_`` prefix.
+
+It is then possible to use the CLI_ argument ``--hparam-set=dqn_cartpole``
+or ``--hparam-set=double_dqn_cartpole``. This registry based approach makes
+hyperparameters composable and trackable for reproducibility.
 
 Create Environment
 ^^^^^^^^^^^^^^^^^^^
@@ -117,21 +148,27 @@ from the codebase.
 .. code-block:: python
     :linenos:
 
-    class CartPoleDQNAgent(BaseDQNAgent):
-      def compute_q_values(self, obs, action, reward, next_obs, done):
-        for i, _ in enumerate(reward):
-          if done[i] == 1:
-            reward[i] = -1.0
+    @registry.register_problem
+    class DQNCartpole(DQNProblem):
 
-        return super(CartPoleDQNAgent, self).compute_q_values(
-            obs, action, reward, next_obs, done)
+      def init_agent(self):
+        observation_space, action_space = utils.get_gym_spaces(self.make_env)
+
+        agent = BaseDQNAgent(
+            observation_space,
+            action_space,
+            double_dqn=self.hparams.double_dqn,
+            lr=self.hparams.actor_lr,
+            gamma=self.hparams.gamma,
+            target_update_interval=self.hparams.target_update_interval)
+
+        return agent
+
+      ...
 
 The agent created by :meth:`~torchrl.registry.problems.Problem.init_agent`
 utilitizes an class instance attribute ``self.hparams`` which contains
 the hyperparameter set object we created above.
-
-This code also demonstrates how we can accomplish reward shaping. Note
-how we have shaped the reward to be `-1` at the terminal state instead of `0`.
 
 
 Run Experiment
@@ -141,8 +178,8 @@ We will use the ``torchrl`` CLI_ to run the experiment.
 
 .. code-block:: bash
 
-    torchrl --problem=dqn-cartpole-v1 \
-            --hparam-set=dqn-cartpole \
+    torchrl --problem=dqn_cartpole \
+            --hparam-set=dqn_cartpole \
             --seed=1 \
             --usr-dirs=experiments \
             --log-dir=log/dqn \
@@ -162,6 +199,7 @@ summary of other arguments is below.
   from the hyperparameter set (including the base ones) and all the arguments
   for reproducibility like ``--seed``. It contains saved checkpoints so that
   experiments can be resumed later. It also contains the Tensorboard events file.
+  This is optional and if unspecified, no files are written.
 - ``--show-progress`` is a utility flag which shows current progress and estimated
   time remaining to completion.
 
@@ -171,6 +209,27 @@ summary of other arguments is below.
     to prevent any discrepancy in the Tensorboard dashboard.
 
 The full list of options is available `below <CLI_>`_.
+
+
+.. note::
+
+    The experiment can also be run programmatically using a simple API
+
+    .. code-block:: python
+        :linenos:
+
+        import torchrl.utils.cli as cli
+
+        argv = [
+            '--problem=dqn_cartpole',
+            '--hparam-set=dqn_cartpole',
+            '--seed=1',
+            '--usr-dirs=experiments',
+            '--log-dir=log/dqn',
+            '--show-progress',
+        ]
+
+        cli.main(argv)
 
 .. _CLI:
 
@@ -183,4 +242,5 @@ CLI Usage
 What's next?
 -------------
 
-See some ready-to-run :ref:`experiments`.
+List all problems using :meth:`~torchrl.registry.registry.list_problems`
+and associated Hyperparameter Sets as :meth:`~torchrl.registry.registry.list_problem_hparams`.
