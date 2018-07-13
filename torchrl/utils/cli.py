@@ -13,6 +13,7 @@ import argparse
 import ast
 import os
 import torch
+import gym
 
 from .. import registry
 from .misc import import_usr_dir
@@ -114,6 +115,9 @@ def filter_problem_args(args: argparse.Namespace):
 
 
 def main(argv: list = None):
+  # Disable Gym warnings, they are terrible
+  gym.logger.set_level(gym.logger.ERROR)
+
   problem_args = parse_args(argv)
   args = filter_problem_args(problem_args)
 

@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.optim import Adam
@@ -49,9 +50,9 @@ class BaseA2CAgent(BaseAgent):
         next_value, _ = self.ac_net(next_obs[-1:])
         values = torch.cat([values, next_value], dim=0)
       else:
-        values = torch.cat([values, torch.zeros(1, 1)], dim=0)
+        values = torch.cat([values, values.new_tensor(np.zeros((1, 1)))], dim=0)
 
-      returns = torch.zeros(len(reward), 1)
+      returns = reward.new_tensor(np.zeros((len(reward), 1)))
       gae = 0.0
       for step in reversed(range(len(reward))):
         delta = reward[step] + self.gamma * values[step + 1] - values[step]
