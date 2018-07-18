@@ -26,6 +26,7 @@ def problem_argv(request):
       'problem': problem_id,
       'hparam-set': hparam_set_id,
       'extra-hparams': 'num_total_steps=100',
+      'eval-interval': 50,
   }
   argv = ['--{}={}'.format(key, value) for key, value in args_dict.items()]
 

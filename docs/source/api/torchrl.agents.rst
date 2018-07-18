@@ -36,18 +36,18 @@ torchrl.agents.dqn\_agent module
     :undoc-members:
     :show-inheritance:
 
-torchrl.agents.ppo\_agent module
---------------------------------
+torchrl.agents.gym\_random\_agent module
+----------------------------------------
 
-.. automodule:: torchrl.agents.ppo_agent
+.. automodule:: torchrl.agents.gym_random_agent
     :members:
     :undoc-members:
     :show-inheritance:
 
-torchrl.agents.random\_gym\_agent module
-----------------------------------------
+torchrl.agents.ppo\_agent module
+--------------------------------
 
-.. automodule:: torchrl.agents.random_gym_agent
+.. automodule:: torchrl.agents.ppo_agent
     :members:
     :undoc-members:
     :show-inheritance:

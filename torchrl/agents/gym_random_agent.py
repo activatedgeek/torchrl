@@ -1,7 +1,7 @@
 from .base_agent import BaseAgent
 
 
-class RandomGymClassicControlAgent(BaseAgent):
+class GymRandomAgent(BaseAgent):
   """Take random actions on a Gym environment.
 
   This is only tested on Classic Control

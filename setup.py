@@ -21,6 +21,9 @@ with open('requirements.txt', 'r') as f:
 with open('requirements_dev.txt', 'r') as f:
   dev_install_requires = f.readlines()
 
+with open('requirements_extra.txt', 'r') as f:
+  extra_install_requires = f.readlines()
+
 if os.path.isfile('VERSION'):
   with open('VERSION') as f:
     VERSION = f.read()
@@ -50,6 +53,7 @@ setup(name='torchrl',
       install_requires=install_requires,
       extras_require={
         'dev': dev_install_requires,
+        'extra': extra_install_requires,
       },
       entry_points={
         'console_scripts': [

@@ -1,16 +1,18 @@
 import torch
-from ..registry import Problem
+
+from .gym_problem import GymProblem
 from ..storage import ReplayBuffer
 
 
-class DQNProblem(Problem):
+class DQNProblem(GymProblem):
   def __init__(self, hparams, problem_args, *args, **kwargs):
     super(DQNProblem, self).__init__(hparams, problem_args, *args, **kwargs)
 
     self.buffer = ReplayBuffer(self.hparams.buffer_size)
 
   def train(self, history_list: list):
-    # Populate the buffer
+    history_list = self.hist_to_tensor(history_list, device=torch.device('cpu'))
+
     batch_history = self.merge_histories(*history_list)
     transitions = list(zip(*batch_history))
     self.buffer.extend(transitions)

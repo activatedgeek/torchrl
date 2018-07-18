@@ -1,4 +1,6 @@
 import abc
+import torch
+import numpy as np
 
 
 class BaseAgent(metaclass=abc.ABCMeta):
@@ -62,3 +64,10 @@ class BaseAgent(metaclass=abc.ABCMeta):
     :return:
     """
     pass
+
+  def obs_to_tensor(self, obs):
+    with torch.no_grad():
+      batch_obs_tensor = torch.from_numpy(
+          np.array(obs)
+      ).float()
+    return batch_obs_tensor

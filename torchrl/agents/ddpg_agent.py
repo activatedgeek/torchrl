@@ -74,8 +74,10 @@ class BaseDDPGAgent(BaseAgent):
     self.target_critic = deepcopy(self.critic)
 
   def act(self, obs, **kwargs):
-    action = self.actor(obs)
-    action = action.cpu().numpy()
+    obs_tensor = self.obs_to_tensor(obs)
+
+    action = self.actor(obs_tensor)
+    action = action.cpu().detach().numpy()
     action = self.noise.get_action(action, self._step)
     action = self.clip_action(action)
 

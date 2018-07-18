@@ -1,9 +1,9 @@
 import torch
-from ..registry import Problem
+from .gym_problem import GymProblem
 from ..storage import PrioritizedReplayBuffer
 
 
-class PrioritizedDQNProblem(Problem):
+class PrioritizedDQNProblem(GymProblem):
   def __init__(self, hparams, problem_args, *args, **kwargs):
     super(PrioritizedDQNProblem, self).__init__(
         hparams, problem_args, *args, **kwargs)
@@ -14,7 +14,8 @@ class PrioritizedDQNProblem(Problem):
                                           num_steps=hparams.beta_anneal_steps)
 
   def train(self, history_list: list):
-    # Populate the buffer
+    history_list = self.hist_to_tensor(history_list, device=torch.device('cpu'))
+
     batch_history = self.merge_histories(*history_list)
     transitions = list(zip(*batch_history))
     self.buffer.extend(transitions)

@@ -1,9 +1,10 @@
 cloudpickle~=0.5.0
 gym~=0.10
 numpy~=1.14
-torch~=0.4.0
-tensorflow~=1.8.0
+ruamel.yaml~=0.15.0
+scipy~=1.1.0
 tensorboard~=1.8.0
 tensorboardX~=1.1
+tensorflow~=1.8.0
+torch~=0.4.0
 tqdm~=4.23.0
-ruamel.yaml~=0.15.0

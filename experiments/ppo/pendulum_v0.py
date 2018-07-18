@@ -1,4 +1,3 @@
-import gym
 import torchrl.registry as registry
 import torchrl.utils as utils
 from torchrl.problems import base_hparams, PPOProblem
@@ -7,11 +6,12 @@ from torchrl.agents import BasePPOAgent
 
 @registry.register_problem
 class PPOPendulum(PPOProblem):
-  def make_env(self):
-    return gym.make('Pendulum-v0')
+  def __init__(self, *args, **kwargs):
+    self.env_id = 'Pendulum-v0'
+    super(PPOPendulum, self).__init__(*args, **kwargs)
 
   def init_agent(self):
-    observation_space, action_space = utils.get_gym_spaces(self.make_env)
+    observation_space, action_space = utils.get_gym_spaces(self.runner.make_env)
 
     agent = BasePPOAgent(
         observation_space,

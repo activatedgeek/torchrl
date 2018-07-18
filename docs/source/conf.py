@@ -47,7 +47,6 @@ extensions = [
     'sphinx.ext.napoleon',
     'm2r',
     'sphinxcontrib.programoutput',
-    # TODO: 'sphinx_gallery.gen_gallery',
 ]
 
 # Add any paths that contain templates here, relative to this directory.

@@ -1,4 +1,3 @@
-import gym
 import torchrl.registry as registry
 import torchrl.utils as utils
 from torchrl.problems import base_hparams, DDPGProblem
@@ -7,11 +6,12 @@ from torchrl.agents import BaseDDPGAgent
 
 @registry.register_problem
 class DDPGPendulum(DDPGProblem):
-  def make_env(self):
-    return gym.make('Pendulum-v0')
+  def __init__(self, *args, **kwargs):
+    self.env_id = 'Pendulum-v0'
+    super(DDPGPendulum, self).__init__(*args, **kwargs)
 
   def init_agent(self):
-    observation_space, action_space = utils.get_gym_spaces(self.make_env)
+    observation_space, action_space = utils.get_gym_spaces(self.runner.make_env)
 
     agent = BaseDDPGAgent(
         observation_space,

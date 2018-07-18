@@ -36,6 +36,14 @@ torchrl.problems.dqn module
     :undoc-members:
     :show-inheritance:
 
+torchrl.problems.gym\_problem module
+------------------------------------
+
+.. automodule:: torchrl.problems.gym_problem
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 torchrl.problems.ppo module
 ---------------------------
 

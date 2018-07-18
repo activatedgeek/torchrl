@@ -12,10 +12,34 @@ torchrl.utils.cli module
     :undoc-members:
     :show-inheritance:
 
+torchrl.utils.gym\_utils module
+-------------------------------
+
+.. automodule:: torchrl.utils.gym_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 torchrl.utils.misc module
 -------------------------
 
 .. automodule:: torchrl.utils.misc
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+torchrl.utils.multi\_envs module
+--------------------------------
+
+.. automodule:: torchrl.utils.multi_envs
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+torchrl.utils.multi\_proc\_wrapper module
+-----------------------------------------
+
+.. automodule:: torchrl.utils.multi_proc_wrapper
     :members:
     :undoc-members:
     :show-inheritance:

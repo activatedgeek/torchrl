@@ -1,4 +1,3 @@
-import gym
 import torchrl.registry as registry
 import torchrl.utils as utils
 from torchrl.problems import base_hparams, A2CProblem
@@ -7,11 +6,12 @@ from torchrl.agents import BaseA2CAgent
 
 @registry.register_problem('a2c_cartpole')
 class A2CCartpole(A2CProblem):
-  def make_env(self):
-    return gym.make('CartPole-v0')
+  def __init__(self, *args, **kwargs):
+    self.env_id = 'CartPole-v0'
+    super(A2CCartpole, self).__init__(*args, **kwargs)
 
   def init_agent(self):
-    observation_space, action_space = utils.get_gym_spaces(self.make_env)
+    observation_space, action_space = utils.get_gym_spaces(self.runner.make_env)
 
     agent = BaseA2CAgent(
         observation_space,

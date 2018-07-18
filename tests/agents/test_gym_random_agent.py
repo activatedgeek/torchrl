@@ -1,39 +1,54 @@
 # pylint: disable=redefined-outer-name
 
-import gym
-import argparse
 import pytest
 import torchrl.registry as registry
 import torchrl.utils as utils
+import torchrl.utils.cli as cli
 import torchrl.problems.base_hparams as base_hparams
-from torchrl.agents.random_gym_agent import RandomGymClassicControlAgent
+from torchrl.problems.gym_problem import GymProblem
+from torchrl.agents.gym_random_agent import GymRandomAgent
 
 
-@pytest.mark.parametrize('env_id', [
+@pytest.fixture(scope='function')
+def problem_argv(request):
+  env_id = request.param
+  args_dict = {
+      'problem': 'random_gym_problem',
+      'extra-hparams': 'num_total_steps=100',
+  }
+  argv = ['--{}={}'.format(key, value) for key, value in args_dict.items()]
+
+  @registry.register_problem  # pylint: disable=unused-variable
+  class RandomGymProblem(GymProblem):
+    def __init__(self, *args, **kwargs):
+      self.env_id = env_id
+      super(RandomGymProblem, self).__init__(*args, **kwargs)
+
+    def init_agent(self):
+      observation_space, action_space = utils.get_gym_spaces(
+          self.runner.make_env)
+
+      return GymRandomAgent(observation_space, action_space)
+
+    def train(self, history_list: list) -> dict:
+      return {}
+
+  @registry.register_hparam
+  def random_hparams():  # pylint: disable=unused-variable
+    return base_hparams.base()
+
+  yield argv
+
+  registry.remove_problem('random_gym_problem')
+  registry.remove_hparam('random_hparams')
+
+
+@pytest.mark.parametrize('problem_argv', [
     'Acrobot-v1',
     'CartPole-v1',
     'MountainCar-v0',
     'MountainCarContinuous-v0',
     'Pendulum-v0',
-])
-def test_classic_control_problem(env_id):
-  class RandomGymProblem(registry.Problem):
-    def make_env(self):
-      return gym.make(env_id)
-
-    def init_agent(self):
-      observation_space, action_space = utils.get_gym_spaces(self.make_env)
-
-      return RandomGymClassicControlAgent(observation_space, action_space)
-
-    def train(self, history_list: list) -> dict:
-      return {}
-
-  args = argparse.Namespace(**{
-      'seed': None, 'num_eval': 1,
-      'log_interval': 1000, 'eval_interval': 1000})
-  hparams = base_hparams.base()
-
-  problem = RandomGymProblem(hparams, args, None,
-                             device='cpu', show_progress=False)
-  problem.run()
+], indirect=['problem_argv'])
+def test_gym_agent(problem_argv):
+  cli.main(problem_argv)

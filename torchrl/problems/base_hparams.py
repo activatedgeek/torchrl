@@ -1,6 +1,7 @@
 from .. import registry
 
 
+@registry.register_hparam
 def base():
   params = registry.HParams()
 

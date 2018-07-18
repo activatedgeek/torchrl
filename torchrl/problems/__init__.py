@@ -1,3 +1,4 @@
+from .gym_problem import GymProblem
 from .a2c import A2CProblem
 from .ddpg import DDPGProblem
 from .dqn import DQNProblem

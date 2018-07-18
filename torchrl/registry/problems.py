@@ -1,8 +1,6 @@
 import abc
 import warnings
 import argparse
-import numpy as np
-import gym
 import os
 import torch
 import glob
@@ -11,9 +9,9 @@ import cloudpickle
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
-from .. import MultiEpisodeRunner
 from ..agents import BaseAgent
 from ..utils import set_seeds, Nop
+from ..runners import BaseRunner
 
 
 class HParams:
@@ -90,6 +88,9 @@ class Problem(metaclass=abc.ABCMeta):
     else:
       self.logger = Nop()
 
+    self.runner = self.make_runner(n_envs=self.hparams.num_processes,
+                                   seed=self.args.seed)
+
     self.agent = self.init_agent()
     self.set_agent_to_device(self.device)
 
@@ -145,18 +146,9 @@ class Problem(metaclass=abc.ABCMeta):
     raise NotImplementedError
 
   @abc.abstractmethod
-  def make_env(self) -> gym.Env:
-    """
-    This method should return a Gym-like environment
-    :return: gym.Env
-    """
+  def make_runner(self, n_envs=1, seed=None) -> BaseRunner:
+    """Create the runner for rollouts."""
     raise NotImplementedError
-
-  def make_runner(self, n_runners=1, base_seed=None) -> MultiEpisodeRunner:
-    return MultiEpisodeRunner(self.make_env,
-                              max_steps=self.hparams.max_episode_steps,
-                              n_runners=n_runners,
-                              base_seed=base_seed)
 
   def set_agent_train_mode(self, flag: bool = True):
     """
@@ -182,30 +174,10 @@ class Problem(metaclass=abc.ABCMeta):
     """
     raise NotImplementedError
 
+  @abc.abstractmethod
   def eval(self, epoch):
-    """
-    This method is called after a rollout and must
-    contain the logic for updating the agent's weights
-    :return:
-    """
-    self.set_agent_train_mode(False)
-
-    eval_runner = self.make_runner(n_runners=1)
-    eval_rewards = []
-    for _ in range(self.args.num_eval):
-      eval_history = eval_runner.collect(self.agent, self.device)
-      _, _, reward_history, _, _ = eval_history[0]
-      eval_rewards.append(np.sum(reward_history, axis=0))
-    eval_runner.close()
-
-    log_avg_reward, log_std_reward = np.average(eval_rewards), \
-                                     np.std(eval_rewards)
-    self.logger.add_scalar('eval_episode/avg_reward', log_avg_reward,
-                           global_step=epoch)
-    self.logger.add_scalar('eval_episode/std_reward', log_std_reward,
-                           global_step=epoch)
-
-    return log_avg_reward, log_std_reward
+    """This must implement the evaluation scheme."""
+    raise NotImplementedError
 
   def run(self):
     """
@@ -214,9 +186,6 @@ class Problem(metaclass=abc.ABCMeta):
     epoch. All variables for statistics are logging with "log_"
     :return:
     """
-    self.runner = self.make_runner(n_runners=self.hparams.num_processes,
-                                   base_seed=self.args.seed)
-
     params = self.hparams
     set_seeds(self.args.seed)
 
@@ -234,12 +203,10 @@ class Problem(metaclass=abc.ABCMeta):
 
     for epoch in epoch_iterator:
       self.set_agent_train_mode(False)
-      history_list = self.runner.collect(self.agent,
-                                         self.device,
-                                         steps=params.rollout_steps)
+      history_list = self.runner.rollout(self.agent, steps=params.rollout_steps)
 
       self.set_agent_train_mode(True)
-      loss_dict = self.train(self.hist_to_tensor(history_list))
+      loss_dict = self.train(history_list)
 
       if epoch % self.args.log_interval == 0:
         for loss_label, loss_value in loss_dict.items():
@@ -268,10 +235,6 @@ class Problem(metaclass=abc.ABCMeta):
       log_n_timesteps += log_rollout_steps
 
       if epoch % self.args.log_interval == 0:
-        log_rollout_duration = self.runner.last_rollout_duration
-        self.logger.add_scalar('episode/steps per sec',
-                               log_rollout_steps / (log_rollout_duration+1e-6),
-                               global_step=epoch)
         self.logger.add_scalar('episode/timesteps', log_n_timesteps,
                                global_step=epoch)
 
@@ -285,24 +248,3 @@ class Problem(metaclass=abc.ABCMeta):
 
     self.runner.close()
     self.logger.close()
-
-  @staticmethod
-  def hist_to_tensor(history_list):
-
-    def from_numpy(item):
-      tensor = torch.from_numpy(item)
-      if isinstance(tensor, torch.DoubleTensor):
-        tensor = tensor.float()
-      return tensor
-
-    return [
-        tuple([from_numpy(item) for item in history])
-        for history in history_list
-    ]
-
-  @staticmethod
-  def merge_histories(*history_list):
-    return tuple([
-        torch.cat(hist, dim=0)
-        for hist in zip(*history_list)
-    ])
