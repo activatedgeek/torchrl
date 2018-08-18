@@ -1,6 +1,7 @@
 import sys
 import os
 from setuptools import setup, find_packages
+from setuptools.command.test import test as TestCommand
 
 CURRENT_PYTHON = sys.version_info[:2]
 MIN_PYTHON = (3, 6)
@@ -18,9 +19,6 @@ if CURRENT_PYTHON < MIN_PYTHON:
 with open('requirements.txt', 'r') as f:
   install_requires = f.readlines()
 
-with open('requirements_dev.txt', 'r') as f:
-  dev_install_requires = f.readlines()
-
 with open('requirements_extra.txt', 'r') as f:
   extra_install_requires = f.readlines()
 
@@ -30,10 +28,23 @@ if os.path.isfile('VERSION'):
 else:
   VERSION = os.environ.get('TRAVIS_PULL_REQUEST_BRANCH') or \
             os.environ.get('TRAVIS_BRANCH') or \
-            'dev'
+            '0.0.dev0'
 
 with open('README.rst') as f:
   README = f.read()
+
+
+class PyTest(TestCommand):
+  def initialize_options(self):
+    TestCommand.initialize_options(self)
+    self.pytest_args = ""
+
+  def run_tests(self):
+    import shlex
+    import pytest
+    errno = pytest.main(shlex.split(self.pytest_args))
+    sys.exit(errno)
+
 
 setup(name='torchrl',
       description='Reinforcement Learning for PyTorch',
@@ -48,6 +59,7 @@ setup(name='torchrl',
           'Intended Audience :: Developers',
           'Intended Audience :: Science/Research',
           'License :: OSI Approved :: Apache Software License',
+          'Programming Language :: Python :: 3.6',
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
       ],
       packages=find_packages(exclude=[
@@ -56,13 +68,24 @@ setup(name='torchrl',
           'experiments',
           'experiments.*'
       ]),
+      tests_require=[
+          'pylint~=2.1.0',
+          'pytest~=3.7.0'
+      ],
       install_requires=install_requires,
       extras_require={
-          'dev': dev_install_requires,
+          'docs': [
+              'sphinx~=1.7.0',
+              'sphinx-nameko-theme~=0.0.0',
+              'sphinx-gallery~=0.2.0',
+              'm2r~=0.2.0',
+              'sphinxcontrib-programoutput~=0.11',
+          ],
           'extra': extra_install_requires,
       },
       entry_points={
           'console_scripts': [
               'torchrl=torchrl.cli.boot:main',
           ]
-      })
+      },
+      cmdclass={"test": PyTest})

@@ -16,14 +16,14 @@ jobs:
 
     - stage: test
       before_script:
-        - pip install -e .[dev]
+        - pip install pylint~=2.1.0
       script:
+        - python setup.py test
         - pylint setup.py torchrl tests experiments
-        - pytest
 
     - stage: deploy
       before_script:
-        - pip install -e .[dev]
+        - pip install -e .[docs]
       script:
         - pushd docs && make html && popd
         - cp _redirects docs/build/html

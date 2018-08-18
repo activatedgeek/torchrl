@@ -10,6 +10,9 @@ TorchRL
 .. image:: https://img.shields.io/badge/status-beta-green.svg
     :target: https://pypi.org/project/torchrl/
 
+.. image:: https://img.shields.io/pypi/pyversions/torchrl.svg
+    :target: https://github.com/activatedgeek/torchrl
+
 +-----------------------------------------------+---------------------------------------------------------+
 | *Docs*: `<https://torchrl.sanyamkapoor.com>`_ | *Github*: `<https://github.com/activatedgeek/torchrl>`_ |
 +-----------------------------------------------+---------------------------------------------------------+

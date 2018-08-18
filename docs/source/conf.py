@@ -22,7 +22,7 @@ copyright = '2018, Sanyam Kapoor'
 author = 'Sanyam Kapoor'
 
 # The short X.Y version
-version = os.environ.get('TRAVIS_PULL_REQUEST_BRANCH') or os.environ.get('TRAVIS_BRANCH') or 'dev'
+version = os.environ.get('TRAVIS_PULL_REQUEST_BRANCH') or os.environ.get('TRAVIS_BRANCH') or '0.0.dev0'
 # The full version, including alpha/beta/rc tags
 release = version
 
