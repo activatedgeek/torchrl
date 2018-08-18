@@ -6,17 +6,17 @@ CURRENT_PYTHON = sys.version_info[:2]
 MIN_PYTHON = (3, 6)
 
 if CURRENT_PYTHON < MIN_PYTHON:
-    sys.stderr.write("""
-        ============================
-        Unsupported Python Version
-        ============================
+  sys.stderr.write("""
+      ============================
+      Unsupported Python Version
+      ============================
 
-        Python {}.{} is unsupported. Please use a version newer than Python {}.{}.
-    """.format(*CURRENT_PYTHON, *MIN_PYTHON))
-    sys.exit(1)
+      Python {}.{} is unsupported. Please use a version newer than Python {}.{}.
+  """.format(*CURRENT_PYTHON, *MIN_PYTHON))
+  sys.exit(1)
 
 with open('requirements.txt', 'r') as f:
-    install_requires = f.readlines()
+  install_requires = f.readlines()
 
 with open('requirements_dev.txt', 'r') as f:
   dev_install_requires = f.readlines()
@@ -28,10 +28,12 @@ if os.path.isfile('VERSION'):
   with open('VERSION') as f:
     VERSION = f.read()
 else:
-  VERSION = os.environ.get('TRAVIS_PULL_REQUEST_BRANCH') or os.environ.get('TRAVIS_BRANCH') or 'dev'
+  VERSION = os.environ.get('TRAVIS_PULL_REQUEST_BRANCH') or \
+            os.environ.get('TRAVIS_BRANCH') or \
+            'dev'
 
 with open('README.rst') as f:
-    README = f.read()
+  README = f.read()
 
 setup(name='torchrl',
       description='Reinforcement Learning for PyTorch',
@@ -42,22 +44,25 @@ setup(name='torchrl',
       author='Sanyam Kapoor',
       license='Apache License 2.0',
       classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: Developers',
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: Apache Software License',
-        'Topic :: Scientific/Engineering :: Artificial Intelligence',
+          'Development Status :: 4 - Beta',
+          'Intended Audience :: Developers',
+          'Intended Audience :: Science/Research',
+          'License :: OSI Approved :: Apache Software License',
+          'Topic :: Scientific/Engineering :: Artificial Intelligence',
       ],
       packages=find_packages(exclude=[
-        'tests', 'tests.*', 'experiments', 'experiments.*']),
+          'tests',
+          'tests.*',
+          'experiments',
+          'experiments.*'
+      ]),
       install_requires=install_requires,
       extras_require={
-        'dev': dev_install_requires,
-        'extra': extra_install_requires,
+          'dev': dev_install_requires,
+          'extra': extra_install_requires,
       },
       entry_points={
-        'console_scripts': [
-          'torchrl=torchrl.utils.cli:main'
-        ]
-      }
-)
+          'console_scripts': [
+              'torchrl=torchrl.cli.boot:main',
+          ]
+      })

@@ -1,5 +1,5 @@
-import torchrl.registry as registry
-import torchrl.utils as utils
+from torchrl import registry
+from torchrl import utils
 from torchrl.problems import PrioritizedDQNProblem
 from torchrl.agents import BaseDQNAgent
 

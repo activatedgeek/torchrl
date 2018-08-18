@@ -2,7 +2,7 @@
 
 import random
 import pytest
-import torchrl.registry.registry as registry
+from torchrl.registry import registry
 from torchrl.registry import HParams
 
 

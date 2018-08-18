@@ -10,105 +10,58 @@ A few ready-to-run experiments using the command line interface.
     Make sure you have the ``experiments`` folder from the
     Github repository `activatedgeek/torchrl <//github.com/activatedgeek/torchrl>`_.
 
-DQN on CartPole-v1
--------------------
+
+.. note::
+
+    See :doc:`cli` for further extensions of these commands.
+
+List all Problems
+-----------------
+
+This lists each problem and associated hyperparameter set.
 
 .. code-block:: bash
 
-    torchrl --problem=dqn-cartpole-v1 \
-            --hparam-set=dqn-cartpole \
-            --seed=1 \
-            --usr-dirs=experiments \
-            --log-dir=log/dqn \
-            --show-progress
+    torchrl --usr-dirs experiments list -o yaml problems
 
-Double DQN on CartPole-v1
---------------------------
-
-.. code-block:: bash
-
-    torchrl --problem=dqn-cartpole-v1 \
-            --hparam-set=ddqn-cartpole \
-            --seed=1 \
-            --usr-dirs=experiments \
-            --log-dir=log/ddqn \
-            --show-progress
-
-Prioritized DQN on CartPole-v1
--------------------------------
-
-.. code-block:: bash
-
-    torchrl --problem=prioritized-dqn-cartpole-v1 \
-            --hparam-set=dqn-cartpole \
-            --seed=1 \
-            --usr-dirs=experiments \
-            --log-dir=log/dqn \
-            --show-progress
-
-Prioritized Double DQN on CartPole-v1
---------------------------------------
-
-.. code-block:: bash
-
-    torchrl --problem=prioritized-dqn-cartpole-v1 \
-            --hparam-set=ddqn-cartpole \
-            --seed=1 \
-            --usr-dirs=experiments \
-            --log-dir=log/dqn \
-            --show-progress
-
-A2C on CartPole-v0
--------------------
-
-.. code-block:: bash
-
-    torchrl --problem=a2c-cartpole-v0 \
-            --hparam-set=a2c-cartpole \
-            --seed=1 \
-            --usr-dirs=experiments \
-            --log-dir=log/a2c \
-            --show-progress
+.. program-output:: torchrl --usr-dirs ../../experiments list -o yaml problems
 
 
-DDPG on Pendulum-v0
+We use one of the problems from above as an example.
+
+Run DQN on CartPole
 --------------------
 
 .. code-block:: bash
 
-    torchrl --problem=ddpg-pendulum-v0 \
-            --hparam-set=ddpg-pendulum \
-            --seed=1 \
-            --usr-dirs=experiments \
-            --log-dir=log/ddpg \
-            --show-progress
+    torchrl --usr-dirs experiments run dqn_cartpole \
+            --hparam-set dqn_cartpole \
+            --seed 1 \
+            --log-dir log/dqn \
+            --progress
 
+Resume Experiment
+++++++++++++++++++
 
-PPO on Pendulum-v0
--------------------
-
-.. code-block:: bash
-
-    torchrl --problem=ppo-pendulum-v0 \
-            --hparam-set=ppo-pendulum \
-            --seed=1 \
-            --usr-dirs=experiments \
-            --log-dir=log/ppo \
-            --show-progress
-
-
-Resume Experiments
-===================
-
-To reload an experiment from previous run, say for instance the DQN run
-above for `3000` more steps (optional argumen),
+To resume this experiment, we simply point to the log directory,
 
 .. code-block:: bash
 
-    torchrl --load-dir=log/dqn \
-            --extra-hparams="num_total_steps=3000" \
-            --usr-dirs=experiments \
-            --show-progress
+    torchrl --usr-dirs experiments resume log/dqn --progress
 
-This will read all the other parameters from the directory and load the latest
-checkpoint.
+
+Extra Hyperparameters
+++++++++++++++++++++++
+
+Extra hyperparameters can be provided as arbitrary key value pairs
+multiple times and can be accessed inside the Problem
+
+.. code-block:: bash
+
+    torchrl --usr-dirs experiments run dqn_cartpole \
+            --hparam-set dqn_cartpole \
+            --extra-hparams "num_total_steps=3000" \
+            --extra-hparams "lr=0.0001" \
+            --seed 1 \
+            --log-dir log/dqn \
+            --progress

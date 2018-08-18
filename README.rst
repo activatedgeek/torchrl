@@ -35,4 +35,10 @@ Install
 
     pip install torchrl
 
+Install from source for the latest changes that have not been published to PyPI.
+
+.. code:: shell
+
+    pip install https://github.com/activatedgeek/torchrl/tarball/master
+
 This installs the ``torchrl`` package and the ``torchrl`` CLI.

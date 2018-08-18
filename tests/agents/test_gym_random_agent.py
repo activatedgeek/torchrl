@@ -1,10 +1,10 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-import torchrl.registry as registry
-import torchrl.utils as utils
-import torchrl.utils.cli as cli
-import torchrl.problems.base_hparams as base_hparams
+from torchrl import registry
+from torchrl import utils
+from torchrl.cli.commands.run import do_run
+from torchrl.problems import base_hparams
 from torchrl.problems.gym_problem import GymProblem
 from torchrl.agents.gym_random_agent import GymRandomAgent
 
@@ -14,9 +14,15 @@ def problem_argv(request):
   env_id = request.param
   args_dict = {
       'problem': 'random_gym_problem',
-      'extra-hparams': 'num_total_steps=100',
+      'hparam_set': 'random_gym_problem',
+      'seed': None,
+      'extra_hparams': {
+          'num_total_steps': 100,
+      },
+      'log_interval': 50,
+      'eval_interval': 50,
+      'num_eval': 1,
   }
-  argv = ['--{}={}'.format(key, value) for key, value in args_dict.items()]
 
   @registry.register_problem  # pylint: disable=unused-variable
   class RandomGymProblem(GymProblem):
@@ -33,14 +39,14 @@ def problem_argv(request):
     def train(self, history_list: list) -> dict:
       return {}
 
-  @registry.register_hparam
-  def random_hparams():  # pylint: disable=unused-variable
-    return base_hparams.base()
+    @staticmethod
+    def hparams_random_gym_problem():
+      return base_hparams.base()
 
-  yield argv
+  yield args_dict
 
   registry.remove_problem('random_gym_problem')
-  registry.remove_hparam('random_hparams')
+  registry.remove_hparam('random_gym_problem')
 
 
 @pytest.mark.parametrize('problem_argv', [
@@ -51,4 +57,5 @@ def problem_argv(request):
     'Pendulum-v0',
 ], indirect=['problem_argv'])
 def test_gym_agent(problem_argv):
-  cli.main(problem_argv)
+  problem = problem_argv.pop('problem')
+  do_run(problem, **problem_argv)

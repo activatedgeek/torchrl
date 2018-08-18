@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
 
     torchrl.agents
+    torchrl.cli
     torchrl.policies
     torchrl.problems
     torchrl.registry

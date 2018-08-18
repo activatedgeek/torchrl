@@ -1,10 +1,8 @@
 import abc
-import warnings
 import argparse
 import os
 import torch
 import glob
-import ruamel.yaml as yaml
 import cloudpickle
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
@@ -43,8 +41,6 @@ class Problem(metaclass=abc.ABCMeta):
   An abstract class which defines functions to define
   any RL problem
   """
-  hparams_file = 'hparams.yaml'
-  args_file = 'args.yaml'
   checkpoint_prefix = 'checkpoint'
 
   def __init__(self, hparams: HParams,
@@ -58,55 +54,16 @@ class Problem(metaclass=abc.ABCMeta):
     self.show_progress = show_progress
     self.device = torch.device(device)
 
-    self.logger = None
-    self.agent = None
-    self.runner = None
     self.start_epoch = 0
 
-    self.init()
-
-  def init(self):
-    # Initialize logging directory if possible, else a no-op
-    if self.log_dir:
-      if os.path.isdir(self.log_dir) and os.listdir(self.log_dir):
-        warnings.warn('Directory "{}" not empty!'.format(self.log_dir))
-      os.makedirs(self.log_dir, exist_ok=True)
-
-      hparams_file_path = os.path.join(self.log_dir,
-                                       self.hparams_file)
-      args_file_path = os.path.join(self.log_dir,
-                                    self.args_file)
-
-      with open(hparams_file_path, 'w') as hparams_file, \
-           open(args_file_path, 'w') as args_file:
-        yaml.dump(self.hparams.__dict__, stream=hparams_file,
-                  default_flow_style=False)
-        yaml.dump(self.args.__dict__, stream=args_file,
-                  default_flow_style=False)
-
-      self.logger = SummaryWriter(log_dir=self.log_dir)
-    else:
-      self.logger = Nop()
+    self.logger = SummaryWriter(log_dir=self.log_dir) \
+      if self.log_dir else Nop()
 
     self.runner = self.make_runner(n_envs=self.hparams.num_processes,
                                    seed=self.args.seed)
 
     self.agent = self.init_agent()
     self.set_agent_to_device(self.device)
-
-  @staticmethod
-  def load_from_dir(load_dir) -> tuple:
-    hparams_file_path = os.path.join(load_dir,
-                                     Problem.hparams_file)
-    args_file_path = os.path.join(load_dir,
-                                  Problem.args_file)
-
-    with open(hparams_file_path, 'r') as hparams_file, \
-      open(args_file_path, 'r') as args_file:
-      params = HParams(yaml.load(hparams_file))
-      args = argparse.Namespace(**yaml.load(args_file))
-
-    return params, args
 
   def load_checkpoint(self, load_dir, epoch=None):
     """
@@ -115,7 +72,7 @@ class Problem(metaclass=abc.ABCMeta):
     """
     if epoch:
       checkpoint_file_path = os.path.join(
-          self.log_dir, '{}-{}.cpkl'.format(self.checkpoint_prefix, epoch))
+          self.log_dir, '{}-{}.ckpt'.format(self.checkpoint_prefix, epoch))
     else:
       checkpoint_files = glob.glob(os.path.join(load_dir,
                                                 self.checkpoint_prefix + '*'))
@@ -132,7 +89,7 @@ class Problem(metaclass=abc.ABCMeta):
     agent_state = self.agent.checkpoint
     if self.log_dir and agent_state:
       checkpoint_file_path = os.path.join(
-          self.log_dir, '{}-{}.cpkl'.format(self.checkpoint_prefix, epoch))
+          self.log_dir, '{}-{}.ckpt'.format(self.checkpoint_prefix, epoch))
       with open(checkpoint_file_path, 'wb') as checkpoint_file:
         cloudpickle.dump(agent_state, checkpoint_file)
 

@@ -236,11 +236,4 @@ The full list of options is available `below <CLI_>`_.
 CLI Usage
 ----------
 
-.. program-output:: torchrl -h
-
-
-What's next?
--------------
-
-List all problems using :meth:`~torchrl.registry.registry.list_problems`
-and associated Hyperparameter Sets as :meth:`~torchrl.registry.registry.list_problem_hparams`.
+See :doc:`cli`.

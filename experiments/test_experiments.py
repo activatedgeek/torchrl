@@ -9,8 +9,8 @@ performance metrics.
 """
 
 import pytest
-import torchrl.registry as registry
-import torchrl.utils.cli as cli
+from torchrl import registry
+from torchrl.cli.commands.run import do_run
 
 
 problem_hparams_tuples = []
@@ -24,16 +24,21 @@ def problem_argv(request):
   problem_id, hparam_set_id = request.param
   args_dict = {
       'problem': problem_id,
-      'hparam-set': hparam_set_id,
-      'extra-hparams': 'num_total_steps=100',
-      'eval-interval': 50,
+      'hparam_set': hparam_set_id,
+      'seed': None,
+      'extra_hparams': {
+          'num_total_steps': 100,
+      },
+      'log_interval': 50,
+      'eval_interval': 50,
+      'num_eval': 1,
   }
-  argv = ['--{}={}'.format(key, value) for key, value in args_dict.items()]
 
-  yield argv
+  yield args_dict
 
 
 @pytest.mark.parametrize('problem_argv', problem_hparams_tuples,
                          indirect=['problem_argv'])
 def test_problem(problem_argv):
-  cli.main(problem_argv)
+  problem = problem_argv.pop('problem')
+  do_run(problem, **problem_argv)

@@ -20,6 +20,9 @@ class GymRunner(BaseRunner):
                n_envs: int = 1):
     super(GymRunner, self).__init__()
 
+    # Gym throws plenty of warnings with each make.
+    gym.logger.set_level(gym.logger.ERROR)
+
     self.n_envs = n_envs
     self.env_id = env_id
     self.envs = MultiGymEnvs(self.make_env, n_envs=n_envs, base_seed=seed)
