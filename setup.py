@@ -70,12 +70,12 @@ setup(name='torchrl',
       ]),
       tests_require=[
           'pylint~=2.1.0',
-          'pytest~=3.7.0'
+          'pytest~=3.9.0'
       ],
       install_requires=install_requires,
       extras_require={
           'docs': [
-              'sphinx~=1.7.0',
+              'sphinx~=1.8.0',
               'sphinx-nameko-theme~=0.0.0',
               'sphinx-gallery~=0.2.0',
               'm2r~=0.2.0',
