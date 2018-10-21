@@ -1,5 +1,3 @@
-.. toctree::
-
 CLI Reference
 =============
 

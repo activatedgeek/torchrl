@@ -9,19 +9,24 @@ from ..utils.gym_utils import append_run_history
 
 
 class GymRunner(BaseRunner):
-  """Runner for OpenAI Gym Environments
+  """
+  This is a runner for OpenAI Gym Environments.
+  It follows the :code:`reset()`, :code:`step()` and :code:`close()`
+  API to generate trajectories and renders each parallel trajectory
+  in its own thread.
 
-  This class is a simple wrapper around
-  OpenAI Gym environments with essential
-  plug points into various steps of the
-  rollout.
+  Args:
+      env_id (str): Environment ID registered with Gym.
+      seed (int): Optional integer to seed stochastic environments.
+      n_envs (int): Number of parallel environments (= trajectories).
+      log_level (int): Log levels from :class:`gym.logger`. \
+          (DEBUG = 10, INFO = 20, WARN = 30, ERROR = 40, DISABLED = 50)
   """
   def __init__(self, env_id: str, seed: int = None,
-               n_envs: int = 1):
+               n_envs: int = 1, log_level=gym.logger.ERROR):
     super(GymRunner, self).__init__()
 
-    # Gym throws plenty of warnings with each make.
-    gym.logger.set_level(gym.logger.ERROR)
+    gym.logger.set_level(log_level)
 
     self.n_envs = n_envs
     self.env_id = env_id
@@ -30,11 +35,20 @@ class GymRunner(BaseRunner):
     self.obs = [None] * n_envs
 
   def make_env(self, seed: int = None) -> gym.Env:
+    """
+    Create an return the environment.
+    See :meth:`~torchrl.runners.base_runner.BaseRunner.make_env` for
+    general description.
+    """
     env = gym.make(self.env_id)
     env.seed(seed)
     return env
 
   def maybe_reset(self):
+    """
+    This helper routine checks any inactive environments
+    and resets them to allow future rollouts.
+    """
     batch_reset_ids = self._get_active_envs(invert=True)
     if batch_reset_ids:
       new_obs = self.envs.reset(batch_reset_ids)
@@ -42,11 +56,22 @@ class GymRunner(BaseRunner):
         self.obs[env_id] = obs
 
   def compute_action(self, agent: BaseAgent, obs_list: list):
-    """Compute Actions from the agent."""
+    """
+    See :meth:`~torchrl.runners.base_runner.BaseRunner.compute_action`
+    for general description.
+    """
     return agent.act(obs_list)
 
   def process_transition(self, history,
                          transition: tuple) -> list:
+    """
+    Appends tuples of observation, action, reward, next observation and
+    termination flag to the history.
+
+    See :meth:`~torchrl.runners.base_runner.BaseRunner.process_transition`
+    for general description.
+    """
+
     if history is None:
       history = init_run_history(self.envs.observation_space,
                                  self.envs.action_space)
@@ -61,6 +86,11 @@ class GymRunner(BaseRunner):
 
   def rollout(self, agent, steps: int = None,
               render: bool = False, fps: int = 30) -> list:
+    """
+    Rollout trajectories from the Gym environment.
+    See :meth:`~torchrl.runners.base_runner.BaseRunner.rollout` for
+    general description.
+    """
     assert self.obs is not None, """state is not defined,
     please `reset()`
     """
@@ -105,15 +135,26 @@ class GymRunner(BaseRunner):
     return history_list
 
   def close(self):
-    """Close the environment."""
+    """
+    Shutdown gym environments.
+
+    See :meth:`~torchrl.runners.base_runner.BaseRunner.close`
+    for a general description.
+    """
     self.envs.close()
 
   def _get_active_envs(self, invert=False) -> list:
-    """Gets a list of active environments.
+    """
+    Gets a list of active environments.
 
     Environments are active when their observations
     are not None. The result is complement if invert
-    is True.
+    is True. Observations being :code:`None` is
+    equivalent to termination by design.
+
+    Args:
+        invert (bool): If :code:`True`, get list of all terminated \
+          environments.
     """
 
     target_ids = []

@@ -76,8 +76,8 @@ setup(name='torchrl',
       extras_require={
           'docs': [
               'sphinx~=1.8.0',
-              'sphinx-nameko-theme~=0.0.0',
-              'sphinx-gallery~=0.2.0',
+              'sphinx-rtd-theme~=0.4.0',
+              'sphinxcontrib-napoleon~=0.7',
               'm2r~=0.2.0',
               'sphinxcontrib-programoutput~=0.11',
           ],

@@ -62,6 +62,35 @@ def _common_remove(target_dict: dict, key: str):
 
 
 def register_hparam(name: Union[Callable, str]):
+  """
+  A decorator to register hyperparameter function.
+
+  Example:
+
+      .. code-block:: python
+
+          import torch.registry as registry
+
+          @registry.register_hparam
+          def my_new_hparams():
+            hparams = registry.HParams()
+            hparams.x = 1
+            return hparams
+
+      This will be registered by name `my_new_hparams`.
+      Optionally, we can also provide a name as argument
+      to the decorator.
+
+      .. code-block:: python
+
+          @registry.register_hparam('my_renamed_hparams')
+  Args:
+      name (str, :class:`~typing.Callable`): Optionally pass a string
+          argument for name or will be the callable.
+
+  Returns:
+      :class:`~typing.Callable`: A decorated function.
+  """
   target_dict = _ALL_HPARAMS
 
   if callable(name):
@@ -71,6 +100,33 @@ def register_hparam(name: Union[Callable, str]):
 
 
 def register_problem(name: Union[Callable, str]):
+  """
+  A decorator to register problems.
+
+  Example:
+
+      .. code-block:: python
+
+          import torch.registry as registry
+
+          @registry.register_problem
+          class MyProblem(registry.Problem):
+            ...
+
+      This will be registered by name `my_problem`.
+      Optionally, we can also provide a name as argument
+      to the decorator.
+
+      .. code-block:: python
+
+          @registry.register_problem('my_renamed_problem')
+  Args:
+      name (str, :class:`~typing.Callable`): Optionally pass a string
+          argument for name or will be the callable.
+
+  Returns:
+      :class:`~typing.Callable`: A decorated function.
+  """
   target_dict = _ALL_PROBLEMS
 
   if callable(name):
@@ -79,41 +135,108 @@ def register_problem(name: Union[Callable, str]):
   return lambda func: _common_decorator(func, name, target_dict)
 
 
-def list_hparams():
-  """List all Hyperparameter Sets in registry."""
+def list_hparams() -> list:
+  """
+  List all registered hyperparameters.
+
+  Returns:
+      list: List of hyperparameter name strings.
+  """
   return _common_list(_ALL_HPARAMS)
 
 
-def get_hparam(hparam_set_id: str):
-  """Get arbitrary HParam set from registry."""
+def get_hparam(hparam_set_id: str) -> Callable:
+  """
+  Get registered hyperparameter by name.
+
+  Args:
+      hparam_set_id (str): A string representing name of hyperparameter set.
+
+  Returns:
+      :class:`~typing.Callable`: A function that returns \
+        :class:`~torchrl.registry.problems.HParams`.
+  """
   return _common_get(_ALL_HPARAMS, hparam_set_id)
 
 
 def list_problem_hparams():
-  """List HParam sets, problem-compatible."""
+  """
+  List all registered hyperparameters associated with a problem.
+  Any static method of a Problem class whose name is prefixed
+  with `hparams_` is associated to a problem. This routine
+  returns all such associations available.
+
+  Example:
+      The format of returned values is
+
+      .. code-block:: json
+
+          {
+            "problem_name": [
+              "hparam_set1", "hparam_set2"
+            ],
+            "other_problem": [
+              "other_problem_hparam1"
+            ]
+          }
+
+  Returns:
+      list: List of problem-hyperparameter associations of the following format.
+  """
   return _PROBLEM_HPARAMS
 
 
 def get_problem_hparam(problem_id: str):
-  """List HParam sets, problem-compatible."""
+  """
+  Get the associated hyperparameters to a problem.
+
+  Args:
+      problem_id (str): Name of registered problem.
+
+  Returns:
+      list: List of hyperparameter sets.
+  """
   return _PROBLEM_HPARAMS[problem_id]
 
 
 def remove_hparam(hparam_set_id: str):
-  """Remove arbitrary HParam set from registry."""
-  return _common_remove(_ALL_HPARAMS, hparam_set_id)
+  """
+  De-register a hyperparameter set.
+
+  Args:
+      hparam_set_id (str): Name of registered hyperparameter.
+  """
+  _common_remove(_ALL_HPARAMS, hparam_set_id)
 
 
 def list_problems():
-  """List all registered Problems."""
+  """
+  List all registered Problems.
+
+  Returns:
+      list: List of string containing all problem names.
+  """
   return _common_list(_ALL_PROBLEMS)
 
 
 def get_problem(problem_id: str):
-  """Get arbitrary Problem from registry."""
+  """
+  Get uninstatiated problem class.
+
+  Args:
+      problem_id (str): Name of registered problem.
+
+  Returns:
+      :class:`torchrl.registry.problems.Problem`: Any derived problem class.
+  """
   return _common_get(_ALL_PROBLEMS, problem_id)
 
 
 def remove_problem(problem_id: str):
-  """Remove arbitrary Problem from registry."""
-  return _common_remove(_ALL_PROBLEMS, problem_id)
+  """
+  De-register a problem.
+
+  Args:
+      problem_id (str): Name of registered problem.
+  """
+  _common_remove(_ALL_PROBLEMS, problem_id)

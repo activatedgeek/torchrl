@@ -13,6 +13,46 @@ from ..runners import BaseRunner
 
 
 class HParams:
+  """
+  This class is friendly wrapper over Python Dictionary
+  to represent the named hyperparameters.
+
+  Example:
+
+      One can manually set arbitrary strings as hyperparameters as
+
+      .. code-block:: python
+
+            import torchrl.registry as registry
+            hparams = registry.HParams()
+            hparams.paramA = 'myparam'
+            hparams.paramB = 10
+
+      or just send in a dictionary object containing all the relevant key/value
+      pairs.
+
+      .. code-block:: python
+
+            import torchrl.registry as registry
+            hparams = registry.HParams({'paramA': 'myparam', 'paramB': 10})
+            assert hparams.paramA == 'myparam'
+            assert hparams.paramB == 10
+
+      Both form equivalent hyperparameter objects.
+
+      To update/override the hyperparamers, use the `update()` method.
+
+      .. code-block:: python
+
+          hparams.update({'paramA': 20, 'paramB': 'otherparam', 'paramC': 5.0})
+          assert hparams.paramA == 20
+          assert hparams.paramB == 'otherparam'
+
+  Args:
+    kwargs (dict): Python dictionary representing named hyperparameters and
+    values.
+
+  """
   def __init__(self, kwargs=None):
     self.update(kwargs or {})
 
@@ -33,26 +73,55 @@ class HParams:
     return print_str
 
   def update(self, items: dict):
+    """
+    Merge two Hyperparameter objects, overriding any repeated keys from
+    the `items` parameter.
+
+    Args:
+        items (dict): Python dictionary containing updated values.
+    """
     self.__dict__.update(items)
 
 
 class Problem(metaclass=abc.ABCMeta):
   """
-  An abstract class which defines functions to define
-  any RL problem
+  This abstract class defines a Reinforcement Learning
+  problem.
+
+  Args:
+      hparams (:class:`~torchrl.registry.problems.HParams`): Object containing
+        all named-hyperparameters.
+      problem_args (:class:`argparse.Namespace`): Argparse namespace object
+        containing Problem arguments like `seed`, `log_interval`,
+        `eval_interval`.
+      log_dir (str): Path to log directory.
+      device (str): String passed to `torch.device()`.
+      show_progress (bool): If true, an animated progress is shown based on
+        `tqdm`.
+      checkpoint_prefix (str): Prefix for the saved checkpoint files.
+
+  Todo:
+      * Remove usage of `argparse.Namespace` for `problem_args` and
+        use :class:`~torchrl.registry.problems.HParams` instead. As a temporary
+        usage fix, convert any dictionary into `argparse.Namespace` using
+        `argparse.Namespace(**mydict)`. Tracked by
+        `#61 <https://github.com/activatedgeek/torchrl/issues/61>`_.
+      * Allow setting `checkpoint_prefix` from CLI. Tracked by
+        `#60 <https://github.com/activatedgeek/torchrl/issues/60>`_.
   """
-  checkpoint_prefix = 'checkpoint'
 
   def __init__(self, hparams: HParams,
                problem_args: argparse.Namespace,
                log_dir: str,
                device: str = 'cuda',
-               show_progress: bool = True):
+               show_progress: bool = True,
+               checkpoint_prefix='checkpoint'):
     self.hparams = hparams
     self.args = problem_args
     self.log_dir = log_dir
     self.show_progress = show_progress
     self.device = torch.device(device)
+    self.checkpoint_prefix = checkpoint_prefix
 
     self.start_epoch = 0
 
@@ -67,8 +136,16 @@ class Problem(metaclass=abc.ABCMeta):
 
   def load_checkpoint(self, load_dir, epoch=None):
     """
-    This method loads the latest checkpoint from the
-    load directory
+    This method loads the latest checkpoint from a directory.
+    It also updates the `self.start_epoch` attribute so that any
+    further calls to save_checkpoint don't overwrite the previously
+    saved checkpoints. The file name format is
+    :code:`<CHECKPOINT_PREFIX>-<EPOCH>.ckpt`.
+
+    Args:
+        load_dir (str): Path to directory containing checkpoint files.
+        epoch (int): Epoch number to load. If :code:`None`, then the file with
+          the latest timestamp is loaded from the given directory.
     """
     if epoch:
       checkpoint_file_path = os.path.join(
@@ -86,6 +163,13 @@ class Problem(metaclass=abc.ABCMeta):
       self.agent.checkpoint = cloudpickle.load(checkpoint_file)
 
   def save_checkpoint(self, epoch):
+    """
+    Save checkpoint at a given epoch. The format is
+    :code:`<CHECKPOINT_PREFIX>-<EPOCH>.ckpt`
+
+    Args:
+        epoch (int): Value of the epoch number.
+    """
     agent_state = self.agent.checkpoint
     if self.log_dir and agent_state:
       checkpoint_file_path = os.path.join(
@@ -96,28 +180,50 @@ class Problem(metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def init_agent(self) -> BaseAgent:
     """
-    Use this method to initialize the learner using `self.args`
-    object
-    :return: BaseLearner
+    This method is called by the constructor and **must** be overriden
+    by any derived class. Using the hyperparameters and problem arguments,
+    one should construct an agent here.
+
+    Returns:
+        :class:`~torchrl.agents.base_agent.BaseAgent`: Any derived agent class.
     """
     raise NotImplementedError
 
   @abc.abstractmethod
   def make_runner(self, n_envs=1, seed=None) -> BaseRunner:
-    """Create the runner for rollouts."""
+    """
+    This method is called by the constructor and **must** be overriden
+    by any derived class. Using the hyperparameters and problem arguments,
+    one should construct an environment runner here.
+
+    Returns:
+        :class:`~torchrl.runners.base_runner.BaseRunner`: Any derived runner
+          class.
+    """
     raise NotImplementedError
 
   def set_agent_train_mode(self, flag: bool = True):
     """
-    This routine sets the training flag for the models
-    returned by the agent
+    This routine is takes the agent's :code:`models` attribute
+    and applies the training flag.
+
+    See https://pytorch.org/docs/stable/nn.html#torch.nn.Module.train.
+
+    Args:
+        flag (bool): :code:`True` or :code:`False`
     """
     for model in self.agent.models:
       model.train(flag)
 
   def set_agent_to_device(self, device: torch.device):
     """
-    This routine sends the agent models to desired device
+    This routine is takes the agent's :code:`models` attribute
+    and sends them to a device.
+
+    See https://pytorch.org/docs/stable/nn.html#torch.nn.Module.to.
+
+    Args:
+        device (:class:`torch.device`):
     """
     for model in self.agent.models:
       model.to(device)
@@ -125,23 +231,93 @@ class Problem(metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def train(self, history_list: list) -> dict:
     """
-    This method is called after a rollout and must
-    contain the logic for updating the agent's weights
-    :return: dict of key value pairs of losses
+    This method **must** be overridden by the derived
+    Problem class and should contain the core idea behind the
+    training step.
+
+    There are no restrictions to what comes into this argument as long
+    as the derived class takes care of following. Typically this should
+    involve a list of rollouts (possibly for each parallel trajectory)
+    and all relevant values for each rollout - observation, action, reward,
+    next observation, termination flag and potentially other information.
+    This raw data must be processed as desired. See
+    :meth:`~torchrl.problems.gym_problem.GymProblem.hist_to_tensor` for a
+    sample routine.
+
+    .. note::
+
+        It is a good idea to always use
+        :meth:`~torchrl.registry.problems.Problem.set_agent_train_mode`
+        appropriately here.
+
+    Args:
+        history_list (list): A list of histories. This will typically be
+          returned by the
+          :meth:`~torchrl.runners.base_runner.BaseRunner.rollout` method of the
+          runner.
+
+    Returns:
+        dict: A Python dictionary containing labeled losses.
     """
     raise NotImplementedError
 
   @abc.abstractmethod
   def eval(self, epoch):
-    """This must implement the evaluation scheme."""
+    """
+    This method **must** be overridden by the derived
+    Problem class and should contain the core idea behind the
+    evaluation of the trained model. This is also responsible
+    for any metric logging using the `self.logger` object.
+
+    :code:`self.args.num_eval` should be a helpful variable.
+
+    .. note::
+
+        It is a good idea to always use
+        :meth:`~torchrl.registry.problems.Problem.set_agent_train_mode` to
+        set training :code:`False` here.
+
+    Args:
+        epoch (int): Epoch number in question.
+    """
     raise NotImplementedError
 
   def run(self):
     """
     This is the entrypoint to a problem class and can be overridden
-    if the train and eval need to be done at a different point in the
-    epoch. All variables for statistics are logging with "log_"
-    :return:
+    if desired. However, a common rollout, train and eval loop has
+    already been provided here. All variables for logging are prefixed
+    with "log\\_".
+
+    :code:`self.args.log_interval` and :code:`self.args.eval_interval`
+    should be helpful variables.
+
+    .. note::
+
+        This precoded routine implements the following general steps
+
+          * Set agent to train mode using
+            :meth:`~torchrl.registry.problems.Problem.set_agent_train_mode`.
+
+          * Rollout trajectories using runner's
+            :meth:`~torchrl.runners.base_runner.BaseRunner.rollout`.
+
+          * Unset agent's train mode.
+
+          * Run the training routine using
+            :meth:`~torchrl.registry.problems.Problem.train` which could
+            potentially be using agent's
+            :meth:`~torchrl.agents.base_agent.BaseAgent.learn`.
+
+          * Evaluate the learned agent using
+            :meth:`~torchrl.registry.problems.Problem.eval`.
+
+          * Periodically log and save checkpoints using
+            :meth:`~torchrl.registry.problems.Problem.save_checkpoint`.
+
+        Since, this routine handles multiple parallel trajectories, care must be
+        taken to reset the environment instances (this should be handled by the
+        appropriate runner or as desired).
     """
     params = self.hparams
     set_seeds(self.args.seed)

@@ -1,5 +1,3 @@
-.. toctree::
-
 .. _getting_started:
 
 Getting Started
@@ -209,27 +207,6 @@ summary of other arguments is below.
     to prevent any discrepancy in the Tensorboard dashboard.
 
 The full list of options is available `below <CLI_>`_.
-
-
-.. note::
-
-    The experiment can also be run programmatically using a simple API
-
-    .. code-block:: python
-        :linenos:
-
-        import torchrl.utils.cli as cli
-
-        argv = [
-            '--problem=dqn_cartpole',
-            '--hparam-set=dqn_cartpole',
-            '--seed=1',
-            '--usr-dirs=experiments',
-            '--log-dir=log/dqn',
-            '--show-progress',
-        ]
-
-        cli.main(argv)
 
 .. _CLI:
 
