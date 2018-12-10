@@ -1,2 +1,2 @@
-gym[atari,box2d,mujoco]~=0.10
+gym[atari,box2d,mujoco]~=0.10.0
 mujoco-py<1.50.2,>=1.50.1
