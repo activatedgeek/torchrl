@@ -3,11 +3,6 @@ Core Concepts
 
 This document is a glossary for core concepts of *TorchRL* framework.
 
-.. note::
-
-    The documentation for these classes is a work-in-progress. Be sure to
-    checkout the source code for details.
-
 .. _Agent:
 
 Agent

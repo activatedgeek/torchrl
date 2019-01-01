@@ -6,10 +6,6 @@ from torchrl.agents import BaseDDPGAgent
 
 @registry.register_problem
 class DDPGPendulum(DDPGProblem):
-  def __init__(self, *args, **kwargs):
-    self.env_id = 'Pendulum-v0'
-    super(DDPGPendulum, self).__init__(*args, **kwargs)
-
   def init_agent(self):
     observation_space, action_space = utils.get_gym_spaces(self.runner.make_env)
 
@@ -26,6 +22,8 @@ class DDPGPendulum(DDPGProblem):
   @staticmethod
   def hparams_ddpg_pendulum():
     params = base_hparams.base_ddpg()
+
+    params.env_id = 'Pendulum-v0'
 
     params.num_processes = 1
 

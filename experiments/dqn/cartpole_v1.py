@@ -6,10 +6,6 @@ from torchrl.agents import BaseDQNAgent
 
 @registry.register_problem
 class DQNCartpole(DQNProblem):
-  def __init__(self, *args, **kwargs):
-    self.env_id = 'CartPole-v1'
-    super(DQNCartpole, self).__init__(*args, **kwargs)
-
   def init_agent(self):
     observation_space, action_space = utils.get_gym_spaces(self.runner.make_env)
 
@@ -26,6 +22,8 @@ class DQNCartpole(DQNProblem):
   @staticmethod
   def hparams_dqn_cartpole():
     params = base_hparams.base_dqn()
+
+    params.env_id = 'CartPole-v1'
 
     params.rollout_steps = 1
     params.num_processes = 1

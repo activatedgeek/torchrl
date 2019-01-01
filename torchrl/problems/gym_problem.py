@@ -11,10 +11,11 @@ class GymProblem(Problem):
   This problem implements a Problem class to handle
   Gym related environments.
 
-  Todo:
-      * `self.env_id` is implicit and not really an ideal spec. If modified
-        constructor is used, then the CLI is rendered useless. See
-        `#62 <https://github.com/activatedgeek/torchrl/issues/62>`_.
+  .. note::
+
+      Any :class:`~torchrl.registry.problems.HParams` supplied
+      to this problem must have the ``env_id`` property assigned
+      to a valid Gym Environment identifier.
   """
 
   def make_runner(self, n_envs=1, seed=None) -> BaseRunner:
@@ -29,7 +30,7 @@ class GymProblem(Problem):
         :class:`~torchrl.runners.gym_runner.GymRunner`: An instantiated \
           runner object.
     """
-    return GymRunner(self.env_id, n_envs=n_envs, seed=seed)
+    return GymRunner(self.hparams.env_id, n_envs=n_envs, seed=seed)
 
   def eval(self, epoch):
     """

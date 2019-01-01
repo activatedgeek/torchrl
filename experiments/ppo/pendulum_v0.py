@@ -6,10 +6,6 @@ from torchrl.agents import BasePPOAgent
 
 @registry.register_problem
 class PPOPendulum(PPOProblem):
-  def __init__(self, *args, **kwargs):
-    self.env_id = 'Pendulum-v0'
-    super(PPOPendulum, self).__init__(*args, **kwargs)
-
   def init_agent(self):
     observation_space, action_space = utils.get_gym_spaces(self.runner.make_env)
 
@@ -28,6 +24,8 @@ class PPOPendulum(PPOProblem):
   @staticmethod
   def hparams_ppo_pendulum():
     params = base_hparams.base_ppo()
+
+    params.env_id = 'Pendulum-v0'
 
     params.rollout_steps = 20
     params.num_processes = 16

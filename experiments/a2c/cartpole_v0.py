@@ -6,10 +6,6 @@ from torchrl.agents import BaseA2CAgent
 
 @registry.register_problem('a2c_cartpole')
 class A2CCartpole(A2CProblem):
-  def __init__(self, *args, **kwargs):
-    self.env_id = 'CartPole-v0'
-    super(A2CCartpole, self).__init__(*args, **kwargs)
-
   def init_agent(self):
     observation_space, action_space = utils.get_gym_spaces(self.runner.make_env)
 
@@ -27,6 +23,8 @@ class A2CCartpole(A2CProblem):
   @staticmethod
   def hparams_a2c_cartpole():
     params = base_hparams.base_pg()
+
+    params.env_id = 'CartPole-v0'
 
     params.num_processes = 16
 

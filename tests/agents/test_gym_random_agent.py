@@ -26,10 +26,6 @@ def problem_argv(request):
 
   @registry.register_problem  # pylint: disable=unused-variable
   class RandomGymProblem(GymProblem):
-    def __init__(self, *args, **kwargs):
-      self.env_id = env_id
-      super(RandomGymProblem, self).__init__(*args, **kwargs)
-
     def init_agent(self):
       observation_space, action_space = utils.get_gym_spaces(
           self.runner.make_env)
@@ -41,7 +37,9 @@ def problem_argv(request):
 
     @staticmethod
     def hparams_random_gym_problem():
-      return base_hparams.base()
+      params = base_hparams.base()
+      params.env_id = env_id
+      return params
 
   yield args_dict
 
