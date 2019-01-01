@@ -129,8 +129,7 @@ class Problem(metaclass=abc.ABCMeta):
     self.runner = self.make_runner(n_envs=self.hparams.num_processes,
                                    seed=self.args.seed)
 
-    self.agent = self.init_agent()
-    self.set_agent_to_device(self.device)
+    self.agent = self.init_agent().to(self.device)
 
   def load_checkpoint(self, load_dir, epoch=None):
     """
@@ -200,32 +199,6 @@ class Problem(metaclass=abc.ABCMeta):
     """
     raise NotImplementedError
 
-  def set_agent_train_mode(self, flag: bool = True):
-    """
-    This routine is takes the agent's :code:`models` attribute
-    and applies the training flag.
-
-    See https://pytorch.org/docs/stable/nn.html#torch.nn.Module.train.
-
-    Args:
-        flag (bool): :code:`True` or :code:`False`
-    """
-    for model in self.agent.models:
-      model.train(flag)
-
-  def set_agent_to_device(self, device: torch.device):
-    """
-    This routine is takes the agent's :code:`models` attribute
-    and sends them to a device.
-
-    See https://pytorch.org/docs/stable/nn.html#torch.nn.Module.to.
-
-    Args:
-        device (:class:`torch.device`):
-    """
-    for model in self.agent.models:
-      model.to(device)
-
   @abc.abstractmethod
   def train(self, history_list: list) -> dict:
     """
@@ -245,7 +218,7 @@ class Problem(metaclass=abc.ABCMeta):
     .. note::
 
         It is a good idea to always use
-        :meth:`~torchrl.registry.problems.Problem.set_agent_train_mode`
+        :meth:`~torchrl.agents.base_agent.BaseAgent.train`
         appropriately here.
 
     Args:
@@ -272,7 +245,7 @@ class Problem(metaclass=abc.ABCMeta):
     .. note::
 
         It is a good idea to always use
-        :meth:`~torchrl.registry.problems.Problem.set_agent_train_mode` to
+        :meth:`~torchrl.agents.base_agent.BaseAgent.train` to
         set training :code:`False` here.
 
     Args:
@@ -295,7 +268,7 @@ class Problem(metaclass=abc.ABCMeta):
         This precoded routine implements the following general steps
 
           * Set agent to train mode using
-            :meth:`~torchrl.registry.problems.Problem.set_agent_train_mode`.
+            :meth:`~torchrl.agents.base_agent.BaseAgent.train`.
 
           * Rollout trajectories using runner's
             :meth:`~torchrl.runners.base_runner.BaseRunner.rollout`.
@@ -333,10 +306,10 @@ class Problem(metaclass=abc.ABCMeta):
       epoch_iterator = tqdm(epoch_iterator, unit='epochs')
 
     for epoch in epoch_iterator:
-      self.set_agent_train_mode(False)
+      self.agent.train(False)
       history_list = self.runner.rollout(self.agent, steps=params.rollout_steps)
 
-      self.set_agent_train_mode(True)
+      self.agent.train(True)
       loss_dict = self.train(history_list)
 
       if epoch % self.args.log_interval == 0:

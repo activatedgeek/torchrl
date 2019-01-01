@@ -43,7 +43,7 @@ class GymProblem(Problem):
     Returns:
         tuple: Average reward and standard deviation.
     """
-    self.set_agent_train_mode(False)
+    self.agent.train(False)
 
     eval_runner = self.make_runner(n_envs=1)
     eval_rewards = []

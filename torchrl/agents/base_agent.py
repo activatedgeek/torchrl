@@ -9,9 +9,9 @@ class BaseAgent(metaclass=abc.ABCMeta):
   how a Reinforcement Learning Algorithm would function.
   """
   def __init__(self, observation_space, action_space):
-    self.is_cuda = False
     self.observation_space = observation_space
     self.action_space = action_space
+    self.device = None
 
   @property
   def models(self) -> list:
@@ -65,9 +65,45 @@ class BaseAgent(metaclass=abc.ABCMeta):
     """
     pass
 
+  def to(self, device: torch.device):
+    """
+    This routine is takes the agent's :code:`models` attribute
+    and sends them to a device.
+
+    See https://pytorch.org/docs/stable/nn.html#torch.nn.Module.to.
+
+    Args:
+        device (:class:`torch.device`):
+
+    Returns:
+        Updated class reference.
+    """
+    self.device = device
+    for model in self.models:
+      model.to(device)
+
+    return self
+
+  def train(self, flag: bool = True):
+    """
+    This routine is takes the agent's :code:`models` attribute
+    and applies the training flag.
+
+    See https://pytorch.org/docs/stable/nn.html#torch.nn.Module.train.
+
+    Args:
+        flag (bool): :code:`True` or :code:`False`
+    """
+    for model in self.models:
+      model.train(flag)
+
   def obs_to_tensor(self, obs):
     with torch.no_grad():
       batch_obs_tensor = torch.from_numpy(
           np.array(obs)
       ).float()
+
+    if self.device:
+      batch_obs_tensor = batch_obs_tensor.to(self.device)
+
     return batch_obs_tensor
