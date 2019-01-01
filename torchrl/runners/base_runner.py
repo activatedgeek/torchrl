@@ -111,7 +111,6 @@ class BaseRunner(metaclass=abc.ABCMeta):
         example.
 
     Todo:
-
         * :code:`render` flag does not work across multiple threads while
           debugging. Tracked by
           `#53 <https://github.com/activatedgeek/torchrl/issues/53>`_.

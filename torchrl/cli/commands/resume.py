@@ -48,6 +48,7 @@ def resume(log_dir, start_epoch,
     args = yaml.safe_load(args_file)
 
   problem = args.pop('problem')
+  checkpoint_prefix = args.pop('checkpoint_prefix')
   do_run(problem,
          extra_hparams=extra_hparams,
          progress=progress,
@@ -56,5 +57,6 @@ def resume(log_dir, start_epoch,
          log_dir=log_dir,
          resume=True,
          start_epoch=start_epoch,
+         checkpoint_prefix=checkpoint_prefix,
          **args,
          **kwargs)

@@ -36,6 +36,7 @@ def do_run(problem,
            log_dir: str = None,
            resume: bool = False,
            start_epoch: int = None,
+           checkpoint_prefix: str = 'checkpoint',
            **kwargs):
   problem_cls = registry.get_problem(problem)
   if not hparam_set:
@@ -62,6 +63,7 @@ def do_run(problem,
     args = {
         'problem': problem,
         'seed': kwargs.get('seed', None),
+        'checkpoint_prefix': checkpoint_prefix,
     }
 
     with open(hparams_file_path, 'w') as hparams_file, \
@@ -74,7 +76,8 @@ def do_run(problem,
   problem = problem_cls(hparams, argparse.Namespace(**kwargs),
                         log_dir,
                         device=device,
-                        show_progress=progress)
+                        show_progress=progress,
+                        checkpoint_prefix=checkpoint_prefix)
 
   if resume:
     problem.load_checkpoint(log_dir, epoch=start_epoch)
@@ -121,6 +124,9 @@ def do_run(problem,
 @click.option('--num-eval',
               help='Number of evaluations.',
               metavar='', default=10, type=int)
+@click.option('--checkpoint-prefix',
+              help='Checkpoint file prefix.',
+              metavar='', default='checkpoint', type=str)
 @click.pass_context
 def run(ctx, problem,
         hparam_set: str = None,
@@ -128,6 +134,7 @@ def run(ctx, problem,
         cuda: bool = False,
         device: str = None,
         log_dir: str = None,
+        checkpoint_prefix: str = 'checkpoint',
         **kwargs):
   """Run Experiments.
 
@@ -150,4 +157,5 @@ def run(ctx, problem,
          cuda=cuda,
          device=device,
          log_dir=log_dir,
+         checkpoint_prefix=checkpoint_prefix,
          **kwargs)

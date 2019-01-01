@@ -106,8 +106,6 @@ class Problem(metaclass=abc.ABCMeta):
         usage fix, convert any dictionary into `argparse.Namespace` using
         `argparse.Namespace(**mydict)`. Tracked by
         `#61 <https://github.com/activatedgeek/torchrl/issues/61>`_.
-      * Allow setting `checkpoint_prefix` from CLI. Tracked by
-        `#60 <https://github.com/activatedgeek/torchrl/issues/60>`_.
   """
 
   def __init__(self, hparams: HParams,
