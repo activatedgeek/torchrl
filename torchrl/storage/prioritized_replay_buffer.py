@@ -39,14 +39,14 @@ class PrioritizedReplayBuffer(ReplayBuffer):
     indices = np.random.choice(range(self.__len__()), size=batch_size,
                                replace=False, p=probs)
 
-    sample_weights = np.power(probs[indices], - self.beta.value)
+    sample_weights = np.power(probs[indices], - self.beta.value)  # pylint: disable=assignment-from-no-return
     sample_weights /= np.max(sample_weights)
 
     batch = [self.buffer[i] for i in indices]
     return indices, sample_weights, batch
 
   def update_probs(self, indices: np.array, td_error: np.array):
-    new_prob = np.power(td_error + self.epsilon, self.alpha)
+    new_prob = np.power(td_error + self.epsilon, self.alpha)  # pylint: disable=assignment-from-no-return
     updated_probs = np.array(self.probs)
     updated_probs[indices] = np.squeeze(new_prob, axis=-1)
 

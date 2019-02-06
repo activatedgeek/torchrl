@@ -16,7 +16,7 @@ jobs:
 
     - stage: test
       before_script:
-        - pip install pylint~=2.1.0
+        - pip install pylint>=2.2
       script:
         - python setup.py test
         - pylint setup.py torchrl tests experiments

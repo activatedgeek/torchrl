@@ -69,17 +69,17 @@ setup(name='torchrl',
           'experiments.*'
       ]),
       tests_require=[
-          'pylint~=2.1.0',
-          'pytest~=3.9.0'
+          'pylint>=2.2',
+          'pytest>=4.2'
       ],
       install_requires=install_requires,
       extras_require={
           'docs': [
-              'sphinx~=1.8.0',
-              'sphinx-rtd-theme~=0.4.0',
-              'sphinxcontrib-napoleon~=0.7',
-              'm2r~=0.2.0',
-              'sphinxcontrib-programoutput~=0.11',
+              'sphinx>=1.8',
+              'sphinx-rtd-theme>=0.4',
+              'sphinxcontrib-napoleon>=0.7',
+              'm2r>=0.2.0',
+              'sphinxcontrib-programoutput>=0.11',
           ],
           'extra': extra_install_requires,
       },

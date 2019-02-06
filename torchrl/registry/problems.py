@@ -105,7 +105,7 @@ class Problem(metaclass=abc.ABCMeta):
         use :class:`~torchrl.registry.problems.HParams` instead. As a temporary
         usage fix, convert any dictionary into `argparse.Namespace` using
         `argparse.Namespace(**mydict)`. Tracked by
-        `#61 <https://github.com/activatedgeek/torchrl/issues/61>`_.
+        `#61 <https://github.com/salmanazarr/torchrl/issues/61>`_.
   """
 
   def __init__(self, hparams: HParams,
@@ -346,7 +346,7 @@ class Problem(metaclass=abc.ABCMeta):
         self.eval(epoch)
         self.save_checkpoint(epoch)
 
-    if self.start_epoch + n_epochs % self.args.eval_interval is not 0:
+    if self.start_epoch + n_epochs % self.args.eval_interval != 0:
       self.eval(self.start_epoch + n_epochs)
       self.save_checkpoint(self.start_epoch + n_epochs)
 

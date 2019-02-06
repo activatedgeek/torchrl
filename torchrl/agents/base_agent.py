@@ -63,7 +63,7 @@ class BaseAgent(metaclass=abc.ABCMeta):
     Optional function to reset learner's internals
     :return:
     """
-    pass
+    # pass
 
   def to(self, device: torch.device):
     """

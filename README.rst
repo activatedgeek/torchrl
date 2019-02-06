@@ -1,8 +1,8 @@
 TorchRL
 ========
 
-.. image:: https://travis-ci.org/activatedgeek/torchrl.svg?branch=master
-    :target: https://travis-ci.org/activatedgeek/torchrl
+.. image:: https://travis-ci.com/salmanazarr/torchrl.svg?branch=master
+    :target: https://travis-ci.org/salmanazarr/torchrl
 
 .. image:: https://badge.fury.io/py/torchrl.svg
     :target: https://pypi.org/project/torchrl/
@@ -11,10 +11,10 @@ TorchRL
     :target: https://pypi.org/project/torchrl/
 
 .. image:: https://img.shields.io/pypi/pyversions/torchrl.svg
-    :target: https://github.com/activatedgeek/torchrl
+    :target: https://github.com/salmanazarr/torchrl
 
 +-----------------------------------------------+---------------------------------------------------------+
-| *Docs*: `<https://torchrl.sanyamkapoor.com>`_ | *Github*: `<https://github.com/activatedgeek/torchrl>`_ |
+| *Docs*: `<https://torchrl.sanyamkapoor.com>`_ |  *Github*: `<https://github.com/salmanazarr/torchrl>`_  |
 +-----------------------------------------------+---------------------------------------------------------+
 
 *TorchRL* provides highly modular and extensible approach to experimenting with
@@ -42,6 +42,6 @@ Install from source for the latest changes that have not been published to PyPI.
 
 .. code:: shell
 
-    pip install https://github.com/activatedgeek/torchrl/tarball/master
+    pip install https://github.com/salmanazarr/torchrl/tarball/master
 
 This installs the ``torchrl`` package and the ``torchrl`` CLI.
