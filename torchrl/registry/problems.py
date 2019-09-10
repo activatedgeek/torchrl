@@ -1,11 +1,11 @@
 import abc
 import argparse
 import os
-import torch
 import glob
 import cloudpickle
 from tqdm import tqdm
-from tensorboardX import SummaryWriter
+import torch
+from torch.utils.tensorboard import SummaryWriter
 
 from ..agents import BaseAgent
 from ..utils import set_seeds, Nop
@@ -105,7 +105,7 @@ class Problem(metaclass=abc.ABCMeta):
         use :class:`~torchrl.registry.problems.HParams` instead. As a temporary
         usage fix, convert any dictionary into `argparse.Namespace` using
         `argparse.Namespace(**mydict)`. Tracked by
-        `#61 <https://github.com/salmanazarr/torchrl/issues/61>`_.
+        `#61 <https://github.com/activatedgeek/torchrl/issues/61>`_.
   """
 
   def __init__(self, hparams: HParams,

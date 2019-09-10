@@ -1,10 +1,8 @@
-from torchrl import registry
 from torchrl import utils
 from torchrl.problems import base_hparams, DQNProblem
 from torchrl.agents import BaseDQNAgent
 
 
-@registry.register_problem
 class DQNCartpole(DQNProblem):
   def init_agent(self):
     observation_space, action_space = utils.get_gym_spaces(self.runner.make_env)

@@ -6,7 +6,6 @@
 
     getting_started
     concepts
-    cli
     experiments
 
 .. toctree::

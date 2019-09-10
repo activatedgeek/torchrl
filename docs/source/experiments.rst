@@ -8,7 +8,7 @@ A few ready-to-run experiments using the command line interface.
 .. warning::
 
     Make sure you have the ``experiments`` folder from the
-    Github repository `salmanazarr/torchrl <//github.com/salmanazarr/torchrl>`_.
+    Github repository `activatedgeek/torchrl <//github.com/activatedgeek/torchrl>`_.
 
 
 .. note::

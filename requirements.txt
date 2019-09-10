@@ -1,11 +1,7 @@
-click>=7.0
-cloudpickle>=0.6
+future
 gym>=0.10
-numpy>=1.15
-ruamel.yaml>=0.15
-scipy>=1.1
-tensorboard>=1.12
-tensorboardX>=1.6
-tensorflow>=1.12
-torch>=1.0
-tqdm>=4.30
+numpy
+ruamel.yaml
+torch>=1.2
+tensorflow>=1.14
+tqdm

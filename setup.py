@@ -83,9 +83,9 @@ setup(name='torchrl',
           ],
           'extra': extra_install_requires,
       },
-      entry_points={
-          'console_scripts': [
-              'torchrl=torchrl.cli.boot:main',
-          ]
-      },
+      # entry_points={
+      #     'console_scripts': [
+      #         'torchrl=torchrl.cli.boot:main',
+      #     ]
+      # },
       cmdclass={"test": PyTest})

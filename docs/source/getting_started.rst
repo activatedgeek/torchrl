@@ -26,7 +26,6 @@ are completely upto the user as long as it returns a valid
 .. code-block:: python
     :linenos:
 
-    @registry.register_problem
     class DQNCartpole(DQNProblem):
       def init_agent(self):
         observation_space, action_space = utils.get_gym_spaces(self.runner.make_env)
@@ -53,7 +52,6 @@ are arbitrary key-value pairs containing primitive values.
 .. code-block:: python
     :linenos:
 
-    @registry.register_problem
     class DQNCartpole(DQNProblem):
 
       ...
@@ -92,45 +90,6 @@ provided by ``torchrl`` and override a few parameters like the learning rate
 defined and there is no restriction to the names as long as they are consistently
 used.
 
-Again, each such hyperparameter set must be registered
-using a unique name using the :meth:`~torchrl.registry.registry.register_hparam`
-decorator as
-
-.. code-block:: python
-
-    @registry.register_hparam # or @registry.register_hparam('my_hparam_set')
-
-For ease of use, ``torchrl`` automatically registers and ``static``
-methods of a Problem class which start with ``hparams_``. This also adds an
-extra association with the problem which is helpful to discover all hyper-parameter
-sets associated with a problem. The HParams set is registered without the
-``hparams_`` prefix.
-
-It is then possible to use the CLI argument ``--hparam-set=dqn_cartpole``
-or ``--hparam-set=double_dqn_cartpole``. This registry based approach makes
-hyperparameters composable and trackable for reproducibility.
-
-Register Problem
-^^^^^^^^^^^^^^^^^
-
-Lastly, each such problem must be registered using the
-:meth:`~torchrl.registry.registry.register_problem` decorator as
-
-.. code-block:: python
-
-    @registry.register_problem
-
-This will take the class name, convert it to camel case and store
-in the registry. One can also optionally provide the name as
-
-.. code-block:: python
-
-    @registry.register_problem('my_dqn_problem')
-
-It is then possible to use the CLI argument ``--problem=dqn_cartpole``
-(or ``--problem=my_dqn_problem`` if custom name used).
-
-
 Full Code
 ^^^^^^^^^^
 
@@ -139,13 +98,11 @@ The full code to run the experiment is as simple as below - less than 50 lines.
 .. code-block:: python
     :linenos:
 
-    from torchrl import registry
     from torchrl import utils
     from torchrl.problems import base_hparams, DQNProblem
     from torchrl.agents import BaseDQNAgent
 
 
-    @registry.register_problem
     class DQNCartpole(DQNProblem):
       def init_agent(self):
         observation_space, action_space = utils.get_gym_spaces(self.runner.make_env)
@@ -192,38 +149,24 @@ The full code to run the experiment is as simple as below - less than 50 lines.
 Run Experiment
 ^^^^^^^^^^^^^^^
 
-We will use the CLI to run the experiment.
 
-.. code-block:: bash
+```
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    torchrl --problem=dqn_cartpole \
-            --hparam-set=dqn_cartpole \
-            --seed=1 \
-            --usr-dirs=experiments \
-            --log-dir=log/dqn \
-            --show-progress
+args=dict(
+    seed=1,
+    log_interval=1000,
+    eval_interval=1000,
+    num_eval=1,
+)
 
-Internally, this runs the :class:`~torchrl.episode_runner.MultiEpisodeRunner`
-class.
+dqn_cartpole = DQNCartpole(
+    hparams_dqn_cartpole(),
+    argparse.Namespace(**args),
+    None, # Disable logging
+    device=device,
+    show_progress=True,
+)
 
-``--problem`` and ``hparam-set`` arguments have been discussed before. A
-summary of other arguments is below.
-
-- ``--seed`` argument ensures reproducibility by calling the
-  :meth:`~torchrl.utils.set_seeds` method.
-- ``--usr-dirs`` argument ensures that the problems registered above are discoverable.
-  This should be a comma-separated list of module folders.
-- ``--log-dir`` is the directory that contains a dump of all hyperparameters
-  from the hyperparameter set (including the base ones) and all the arguments
-  for reproducibility like ``--seed``. It contains saved checkpoints so that
-  experiments can be resumed later. It also contains the Tensorboard events file.
-  This is optional and if unspecified, no files are written.
-- ``--show-progress`` is a utility flag which shows current progress and estimated
-  time remaining to completion.
-
-.. warning::
-
-    While reusing ``--log-dir``, make sure that the old events files are deleted
-    to prevent any discrepancy in the ``Tensorboard`` dashboard.
-
-The full list of options is available at :doc:`cli`.
+dqn_cartpole.run()
+```
