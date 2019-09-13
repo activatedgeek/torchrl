@@ -1,1 +1,1 @@
-from . import cartpole_v1
+from .cartpole_v1 import DQNCartpole

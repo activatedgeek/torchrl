@@ -1,1 +1,1 @@
-from . import cartpole_v0
+from .cartpole_v0 import A2CCartpole

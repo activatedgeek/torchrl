@@ -200,7 +200,7 @@ class Problem(metaclass=abc.ABCMeta):
     raise NotImplementedError
 
   @abc.abstractmethod
-  def train(self, history_list: list) -> dict:
+  def train(self, trajectory_list: list) -> dict:
     """
     This method **must** be overridden by the derived
     Problem class and should contain the core idea behind the
@@ -222,7 +222,7 @@ class Problem(metaclass=abc.ABCMeta):
         appropriately here.
 
     Args:
-        history_list (list): A list of histories. This will typically be
+        trajectory_list (list): A list of histories. This will typically be
           returned by the
           :meth:`~torchrl.runners.base_runner.BaseRunner.rollout` method of the
           runner.
@@ -307,10 +307,10 @@ class Problem(metaclass=abc.ABCMeta):
 
     for epoch in epoch_iterator:
       self.agent.train(False)
-      history_list = self.runner.rollout(self.agent, steps=params.rollout_steps)
+      traj_list = self.runner.rollout(self.agent, steps=params.rollout_steps)
 
       self.agent.train(True)
-      loss_dict = self.train(history_list)
+      loss_dict = self.train(traj_list)
 
       if epoch % self.args.log_interval == 0:
         for loss_label, loss_value in loss_dict.items():
@@ -319,13 +319,12 @@ class Problem(metaclass=abc.ABCMeta):
 
       log_rollout_steps = 0
 
-      for i, history in enumerate(history_list):
+      for i, history in enumerate(traj_list):
+        log_rollout_steps += len(history.reward)
+        log_episode_len[i] += len(history.reward)
+        log_episode_reward[i] += history.reward.sum()
 
-        log_rollout_steps += len(history[2])
-        log_episode_len[i] += len(history[2])
-        log_episode_reward[i] += history[2].sum()
-
-        if history[-1][-1] == 1:
+        if history.done[-1] == 1:
           self.agent.reset()
 
           log_n_episodes += 1

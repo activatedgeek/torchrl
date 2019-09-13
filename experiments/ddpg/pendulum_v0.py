@@ -1,6 +1,7 @@
 from torchrl import utils
-from torchrl.problems import base_hparams, DDPGProblem
-from torchrl.agents import BaseDDPGAgent
+from torchrl.problems import base_hparams
+from torchrl.contrib.problems import DDPGProblem
+from torchrl.contrib.agents import BaseDDPGAgent
 
 
 class DDPGPendulum(DDPGProblem):

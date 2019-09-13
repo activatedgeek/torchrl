@@ -1,1 +1,1 @@
-from . import pendulum_v0
+from .pendulum_v0 import DDPGPendulum

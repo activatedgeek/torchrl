@@ -1,6 +1,7 @@
 from torchrl import utils
-from torchrl.problems import base_hparams, PPOProblem
-from torchrl.agents import BasePPOAgent
+from torchrl.problems import base_hparams
+from torchrl.contrib.problems import PPOProblem
+from torchrl.contrib.agents import BasePPOAgent
 
 
 class PPOPendulum(PPOProblem):

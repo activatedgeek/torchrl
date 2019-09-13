@@ -48,9 +48,8 @@ class GymProblem(Problem):
     eval_runner = self.make_runner(n_envs=1)
     eval_rewards = []
     for _ in range(self.args.num_eval):
-      eval_history = eval_runner.rollout(self.agent)
-      _, _, reward_history, _, _ = eval_history[0]  # pylint: disable=unpacking-non-sequence
-      eval_rewards.append(np.sum(reward_history, axis=0))
+      eval_history = eval_runner.rollout(self.agent)[0]
+      eval_rewards.append(np.sum(eval_history.reward, axis=0))
     eval_runner.close()
 
     log_avg_reward, log_std_reward = np.average(eval_rewards), \

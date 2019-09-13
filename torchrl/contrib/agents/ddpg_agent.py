@@ -3,9 +3,9 @@ import numpy as np
 import torch.nn.functional as F
 from torch import nn
 from torch.optim import Adam
+from torchrl.agents import BaseAgent
+from torchrl.policies import OUNoise
 
-from .base_agent import BaseAgent
-from ..policies import OUNoise
 from ..models import DDPGActorNet, DDPGCriticNet
 
 

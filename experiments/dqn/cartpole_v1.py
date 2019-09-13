@@ -1,6 +1,7 @@
 from torchrl import utils
-from torchrl.problems import base_hparams, DQNProblem
-from torchrl.agents import BaseDQNAgent
+from torchrl.problems import base_hparams
+from torchrl.contrib.problems import DQNProblem
+from torchrl.contrib.agents import BaseDQNAgent
 
 
 class DQNCartpole(DQNProblem):

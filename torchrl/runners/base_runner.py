@@ -52,34 +52,6 @@ class BaseRunner(metaclass=abc.ABCMeta):
     raise NotImplementedError
 
   @abc.abstractmethod
-  def process_transition(self, history,
-                         transition: tuple) -> list:
-    """
-    This helper method **must** be overriden by any derived
-    class. Effectively, this method should take in all
-    previous history and append the current transition tuple.
-
-    .. warning::
-
-        The first call to this method will have history as :code:`None`.
-        This allows for flexibility in terms of the storage format of
-        history. Make sure to handle this case and mutate as desired.
-        See :class:`~torchrl.runners.gym_runner.GymRunner` for example.
-
-    Args:
-        history: A set of history items. The derived class is free to \
-          choose any type.
-        transition (tuple): A transition tuple which represents current \
-          observation, action, reward, next observation and termination flag.
-          Typically, this is a 5-tuple however the derived class is free to
-          add more information here as long as handled appropriately.
-
-    Returns:
-        The update history object.
-    """
-    raise NotImplementedError
-
-  @abc.abstractmethod
   def rollout(self, agent, steps: int = None,
               render: bool = False, fps: int = 30):
     """

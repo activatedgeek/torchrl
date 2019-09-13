@@ -4,6 +4,8 @@ python:
 
 cache:
   pip: true
+  directories:
+    - .pytest_cache/
 
 stages:
   - name: test

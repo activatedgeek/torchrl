@@ -100,7 +100,8 @@ The full code to run the experiment is as simple as below - less than 50 lines.
 
     from torchrl import utils
     from torchrl.problems import base_hparams, DQNProblem
-    from torchrl.agents import BaseDQNAgent
+    from torchrl.contrib.problems import DQNProblem
+    from torchrl.contrib.agents import BaseDQNAgent
 
 
     class DQNCartpole(DQNProblem):

@@ -1,6 +1,5 @@
 import torch
-
-from .gym_problem import GymProblem
+from torchrl.problems import GymProblem
 
 
 class A2CProblem(GymProblem):

@@ -1,6 +1,7 @@
 from torchrl import utils
-from torchrl.problems import base_hparams, A2CProblem
-from torchrl.agents import BaseA2CAgent
+from torchrl.problems import base_hparams
+from torchrl.contrib.problems import A2CProblem
+from torchrl.contrib.agents import BaseA2CAgent
 
 
 class A2CCartpole(A2CProblem):

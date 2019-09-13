@@ -1,6 +1,6 @@
 from torchrl import utils
-from torchrl.problems import PrioritizedDQNProblem
-from torchrl.agents import BaseDQNAgent
+from torchrl.contrib.problems import PrioritizedDQNProblem
+from torchrl.contrib.agents import BaseDQNAgent
 
 from ..dqn.cartpole_v1 import DQNCartpole
 

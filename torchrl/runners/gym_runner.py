@@ -1,11 +1,11 @@
 import time
 import gym
+import numpy as np
 
 from .base_runner import BaseRunner
 from ..agents import BaseAgent
 from ..utils import MultiGymEnvs
-from ..utils.gym_utils import init_run_history
-from ..utils.gym_utils import append_run_history
+from ..storage import Transition
 
 
 class GymRunner(BaseRunner):
@@ -62,28 +62,6 @@ class GymRunner(BaseRunner):
     """
     return agent.act(obs_list)
 
-  def process_transition(self, history,
-                         transition: tuple) -> list:
-    """
-    Appends tuples of observation, action, reward, next observation and
-    termination flag to the history.
-
-    See :meth:`~torchrl.runners.base_runner.BaseRunner.process_transition`
-    for general description.
-    """
-
-    if history is None:
-      history = init_run_history(self.envs.observation_space,
-                                 self.envs.action_space)
-
-    # Rearrange according to convention
-    obs, action, next_obs, reward, done, _ = transition
-    transition = (obs, action, reward, next_obs, done)
-
-    append_run_history(history, *transition)
-
-    return history
-
   def rollout(self, agent, steps: int = None,
               render: bool = False, fps: int = 30) -> list:
     """
@@ -104,7 +82,7 @@ class GymRunner(BaseRunner):
       self.envs.render(env_id_list)
       time.sleep(1. / fps)
 
-    history_list = [None] * self.n_envs
+    trajectory_list = [[] for _ in range(self.n_envs)]
 
     while steps:
       env_id_list = self._get_active_envs()
@@ -115,15 +93,14 @@ class GymRunner(BaseRunner):
       action_list = self.compute_action(agent, obs_list)
       step_list = self.envs.step(env_id_list, action_list)
 
-      transition_list = [
-          (obs, action, *step)
-          for obs, action, step in zip(obs_list, action_list, step_list)
-      ]
-      for env_id, transition in zip(env_id_list, transition_list):
-        history_list[env_id] = self.process_transition(history_list[env_id],
-                                                       transition)
+      for env_id, obs, action, (next_obs, reward, done, _) in zip(
+          env_id_list, obs_list, action_list, step_list):
 
-      for env_id, (next_obs, _, done, _) in zip(env_id_list, step_list):
+        trajectory_list[env_id].append(
+            Transition(obs=obs, action=action, reward=[reward],
+                       next_obs=next_obs, done=[done])
+        )
+
         self.obs[env_id] = None if done else next_obs
 
       if render:
@@ -132,7 +109,27 @@ class GymRunner(BaseRunner):
 
       steps -= 1
 
-    return history_list
+    # TODO(sanyam): To do this here or leave upto the consumer?
+    trajectory_list = [
+        Transition(*[
+            np.array(item, dtype=np.float)
+            for item in zip(*trajectory)
+        ])
+        for trajectory in trajectory_list
+    ]
+
+    # TODO(sanyam): needs to be done for continuous action environments
+    for i, traj in enumerate(trajectory_list):
+      if traj.action.ndim != 2:
+        trajectory_list[i] = Transition(
+            obs=traj.obs,
+            action=np.squeeze(traj.action, axis=-1),
+            reward=traj.reward,
+            next_obs=traj.next_obs,
+            done=traj.done,
+        )
+
+    return trajectory_list
 
   def close(self):
     """

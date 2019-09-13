@@ -15,7 +15,7 @@ class RandomGymProblem(GymProblem):
 
     return GymRandomAgent(observation_space, action_space)
 
-  def train(self, history_list: list) -> dict:
+  def train(self, trajectory_list: list) -> dict:
     return {}
 
   @staticmethod

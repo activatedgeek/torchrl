@@ -1,5 +1,5 @@
-from .gym_problem import GymProblem
-from ..utils import minibatch_generator
+from torchrl.problems import GymProblem
+from torchrl.utils import minibatch_generator
 
 
 class PPOProblem(GymProblem):

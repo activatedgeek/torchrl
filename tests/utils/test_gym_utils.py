@@ -1,5 +1,5 @@
 import gym
-from torchrl.utils.gym_utils import get_gym_spaces, init_run_history
+from torchrl.utils.gym_utils import get_gym_spaces
 
 
 def make_env():
@@ -11,10 +11,3 @@ def test_gym_spaces():
 
   assert isinstance(observation_space, gym.Space)
   assert isinstance(action_space, gym.Space)
-
-
-def test_init_run_history():
-  env = make_env()
-  history = init_run_history(env.observation_space, env.action_space)
-
-  assert len(history) == 5
