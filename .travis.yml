@@ -1,6 +1,6 @@
 language: python
 python:
-  - "3.6"
+  - "3.7"
 
 cache:
   pip: true
@@ -18,9 +18,9 @@ jobs:
 
     - stage: test
       before_script:
-        - pip install pylint>=2.2
+        - pip install .[test]
       script:
-        - python setup.py test
+        - pytest
         - pylint setup.py torchrl tests experiments
 
     - stage: deploy

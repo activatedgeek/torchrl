@@ -1,20 +1,6 @@
-import sys
 import os
 from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
 
-CURRENT_PYTHON = sys.version_info[:2]
-MIN_PYTHON = (3, 6)
-
-if CURRENT_PYTHON < MIN_PYTHON:
-  sys.stderr.write("""
-      ============================
-      Unsupported Python Version
-      ============================
-
-      Python {}.{} is unsupported. Please use a version newer than Python {}.{}.
-  """.format(*CURRENT_PYTHON, *MIN_PYTHON))
-  sys.exit(1)
 
 with open('requirements.txt', 'r') as f:
   install_requires = f.readlines()
@@ -32,18 +18,6 @@ else:
 
 with open('README.rst') as f:
   README = f.read()
-
-
-class PyTest(TestCommand):
-  def initialize_options(self):
-    TestCommand.initialize_options(self)
-    self.pytest_args = ""
-
-  def run_tests(self):
-    import shlex
-    import pytest
-    errno = pytest.main(shlex.split(self.pytest_args))
-    sys.exit(errno)
 
 
 setup(name='torchrl',
@@ -68,12 +42,13 @@ setup(name='torchrl',
           'experiments',
           'experiments.*'
       ]),
-      tests_require=[
-          'pylint>=2.2',
-          'pytest>=4.2'
-      ],
+      python_requires='>=3.6',
       install_requires=install_requires,
       extras_require={
+          'test': [
+              'pylint>=2.2',
+              'pytest>=4.2',
+          ],
           'docs': [
               'sphinx>=1.8',
               'sphinx-rtd-theme>=0.4',
@@ -88,4 +63,4 @@ setup(name='torchrl',
       #         'torchrl=torchrl.cli.boot:main',
       #     ]
       # },
-      cmdclass={"test": PyTest})
+     )
