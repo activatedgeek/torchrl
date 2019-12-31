@@ -1,6 +1,7 @@
-gym>=0.10
+gym
+kondo
 numpy
 ruamel.yaml
-torch>=1.2
-tensorflow>=1.14
+torch
+tensorflow
 tqdm
