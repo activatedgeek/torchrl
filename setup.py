@@ -37,8 +37,6 @@ setup(name='torchrl',
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
       ],
       packages=find_packages(exclude=[
-          'tests',
-          'tests.*',
           'experiments',
           'experiments.*'
       ]),
@@ -57,10 +55,5 @@ setup(name='torchrl',
               'sphinxcontrib-programoutput>=0.11',
           ],
           'extra': extra_install_requires,
-      },
-      # entry_points={
-      #     'console_scripts': [
-      #         'torchrl=torchrl.cli.boot:main',
-      #     ]
-      # },
+      }
      )

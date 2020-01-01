@@ -1,5 +1,4 @@
 import abc
-from ..agents import BaseAgent
 
 
 class BaseRunner(metaclass=abc.ABCMeta):
@@ -32,7 +31,7 @@ class BaseRunner(metaclass=abc.ABCMeta):
     raise NotImplementedError
 
   @abc.abstractmethod
-  def compute_action(self, agent: BaseAgent, obs_list: list):
+  def compute_action(self, agent, obs_list: list):
     """
     This helper method **must** be overriden by any derived
     class. It allows for flexible runners where any pre/post

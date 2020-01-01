@@ -28,17 +28,6 @@ def base_pg():
   return params
 
 
-def base_ddpg():
-  params = base_pg()
-
-  params.tau = 1e-2
-  params.ou_mu = 0.0
-  params.ou_theta = 0.15
-  params.ou_sigma = 0.2
-
-  return params
-
-
 def base_ppo():
   params = base_pg()
 
@@ -46,16 +35,5 @@ def base_ppo():
   params.clip_ratio = 0.2
   params.ppo_epochs = 5
   params.max_grad_norm = 1.0
-
-  return params
-
-
-def base_dqn():
-  params = base()
-
-  params.double_dqn = False
-  params.eps_max = 1.0
-  params.eps_min = 0.1
-  params.target_update_interval = 2
 
   return params

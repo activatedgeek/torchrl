@@ -7,8 +7,8 @@ from tqdm import tqdm
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from ..agents import BaseAgent
-from ..utils import set_seeds, Nop
+from kondo.utils import Nop
+from ..utils import set_seeds
 from ..runners import BaseRunner
 
 
@@ -175,7 +175,7 @@ class Problem(metaclass=abc.ABCMeta):
         cloudpickle.dump(agent_state, checkpoint_file)
 
   @abc.abstractmethod
-  def init_agent(self) -> BaseAgent:
+  def init_agent(self):
     """
     This method is called by the constructor and **must** be overriden
     by any derived class. Using the hyperparameters and problem arguments,

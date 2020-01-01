@@ -3,9 +3,8 @@ import gym
 import numpy as np
 
 from .base_runner import BaseRunner
-from ..agents import BaseAgent
 from ..utils import MultiGymEnvs
-from ..storage import Transition
+from torchrl.utils.storage import Transition
 
 
 class GymRunner(BaseRunner):
@@ -55,7 +54,7 @@ class GymRunner(BaseRunner):
       for env_id, obs in zip(batch_reset_ids, new_obs):
         self.obs[env_id] = obs
 
-  def compute_action(self, agent: BaseAgent, obs_list: list):
+  def compute_action(self, agent, obs_list: list):
     """
     See :meth:`~torchrl.runners.base_runner.BaseRunner.compute_action`
     for general description.

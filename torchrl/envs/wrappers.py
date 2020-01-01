@@ -1,4 +1,5 @@
 import gym
+from torchrl.utils.storage import Transition
 
 
 class TransitionMonitor(gym.Wrapper):
@@ -51,7 +52,12 @@ class TransitionMonitor(gym.Wrapper):
   def step(self, action):
     next_obs, reward, self._ep_done, self._ep_info = self.env.step(action)
 
-    transition = (self.obs, action, reward, next_obs, self._ep_done)
+    transition = Transition(
+        obs=self.obs,
+        action=action,
+        reward=reward,
+        next_obs=next_obs,
+        done=self._ep_done)
 
     self._ep_return += reward
     self._ep_len += 1
