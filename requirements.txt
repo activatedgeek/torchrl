@@ -1,7 +1,0 @@
-gym
-kondo
-numpy
-ruamel.yaml
-torch
-tensorflow
-tqdm

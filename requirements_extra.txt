@@ -1,2 +1,0 @@
-gym[atari,box2d,mujoco]>=0.10
-mujoco-py<1.50.2,>=1.50.1

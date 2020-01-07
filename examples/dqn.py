@@ -28,8 +28,8 @@ class DQNExperiment(BaseExperiment):
     self.buffer.extend(transition_list)
 
   def build_controller(self):
-    return DQNController(self.rollout_env.observation_space.shape[0],
-                         self.rollout_env.action_space.n,
+    return DQNController(self.envs.observation_space.shape[0],
+                         self.envs.action_space.n,
                          **self._controller_args,
                          device=self.device)
 
@@ -51,8 +51,9 @@ class DQNExperiment(BaseExperiment):
                 gamma=.99,
                 n_train_interval=1,
                 n_frames=20000,
-                batch_size=32,
-                buffer_size=1000,
+                n_envs=10,
+                batch_size=256,
+                buffer_size=5000,
                 double_dqn=False,
                 eps_max=1.0,
                 eps_min=1e-2,
@@ -69,8 +70,9 @@ class DQNExperiment(BaseExperiment):
                 gamma=.99,
                 n_train_interval=1,
                 n_frames=20000,
-                batch_size=32,
-                buffer_size=1000,
+                n_envs=10,
+                batch_size=256,
+                buffer_size=5000,
                 double_dqn=True,
                 eps_max=1.0,
                 eps_min=1e-2,
@@ -100,4 +102,3 @@ class DQNExperiment(BaseExperiment):
             exhaustive=True
         ),
     ]
-

@@ -86,7 +86,7 @@ class DDPGController(Controller):
 
   def act(self, obs):
     with torch.no_grad():
-      obs_tensor = torch.Tensor(obs).float().to(self.device).unsqueeze(0)
+      obs_tensor = torch.Tensor(obs).float().to(self.device)
       action = self.actor(obs_tensor)
 
     action = action.cpu().detach().numpy()
@@ -96,7 +96,7 @@ class DDPGController(Controller):
     if self.noise.step % self.n_reset_interval == 0:
       self.noise.reset()
 
-    return np.squeeze(action, axis=0)
+    return action
 
   def learn(self, obs, action, reward, next_obs, done):
     self.actor.train()

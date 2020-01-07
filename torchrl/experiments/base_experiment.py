@@ -1,15 +1,29 @@
 from kondo import Experiment
 from tqdm.auto import tqdm
+import functools
 import torch
 
 
-from torchrl.envs import make_gym_env, TransitionMonitor
+from torchrl.envs import make_gym_env, ParallelEnvs
+from torchrl.utils.storage import Transition
 from torchrl.controllers import Controller, RandomController
 
 
+def log_dict(logger, info: dict, tag: str, step=None):
+  for k, v in info.items():
+    if v is not None:
+      try:
+        logger.add_scalar(f'{tag}/{k}', v,
+                          global_step=step)
+      except AssertionError:
+        # NOTE(sanyam): some info may not be scalar and is ignored.
+        pass
+
+
 class BaseExperiment(Experiment):
-  def __init__(self, env_id: str = None, n_frames: int = int(1e3),
-               n_rand_frames: int = 0, n_train_interval: int = 100, **kwargs):
+  def __init__(self, env_id: str = None, n_envs: int = 1,
+               n_frames: int = int(1e3), n_rand_frames: int = 0,
+               n_train_interval: int = 100, **kwargs):
     assert env_id is not None, '"env_id" cannot be None'
 
     super().__init__(**kwargs)
@@ -20,18 +34,20 @@ class BaseExperiment(Experiment):
     self.n_rand_frames = n_rand_frames
     self.n_train_interval = n_train_interval
 
-    self.rollout_env = TransitionMonitor(make_gym_env(env_id, seed=self.seed))
+    self.envs = ParallelEnvs(functools.partial(make_gym_env, env_id),
+                             n_envs=n_envs, base_seed=self.seed)
+
     self.controller = self.build_controller()
 
     self._cur_frames = 0
 
   def build_controller(self) -> Controller:
-    return RandomController(self.rollout_env.action_space)
+    return RandomController(self.envs.action_space)
 
-  def act(self, obs):
+  def act(self, obs_list: list) -> list:
     if self._cur_frames < self.n_rand_frames:
-      return RandomController(self.rollout_env.action_space).act(obs)
-    return self.controller.act(obs)
+      return RandomController(self.envs.action_space).act(obs_list)
+    return self.controller.act(obs_list)
 
   def store(self, transition_list):
     '''Placeholder method for storage related usage.
@@ -42,45 +58,43 @@ class BaseExperiment(Experiment):
     '''
     return {}
 
-  def _log_dict(self, tag: str, log_dict: dict):
-    for k, v in log_dict.items():
-      if v is not None:
-        try:
-          self.logger.add_scalar(f'{tag}/{k}', v,
-                                 global_step=self._cur_frames)
-        except AssertionError:
-          # NOTE(sanyam): some info may not be scalar and is ignored.
-          pass
-
-  def _run(self):
+  def run(self):
     with tqdm(initial=self._cur_frames,
               total=self.n_frames, unit='steps') as steps_bar:
-      self.rollout_env.reset()
+      obs_list = self.envs.reset(range(self.envs.n_procs))
 
       while self._cur_frames < self.n_frames:
-        action = self.act(self.rollout_env.obs)
-        self.rollout_env.step(action)
+        action_list = self.act(obs_list)
+        step_list = self.envs.step(list(range(self.envs.n_procs)), action_list)
 
-        self._cur_frames += 1
-        steps_bar.update(1)
+        steps_bar.update(self.envs.n_procs)
+
+        transition_list = []
+        for i, (obs, action, (next_obs, rew, done, _)) in \
+          enumerate(zip(obs_list, action_list, step_list)):
+
+          obs_list[i] = next_obs
+          self._cur_frames += 1
+
+          transition_list.append(
+              Transition(obs=obs, action=action,
+                         reward=rew, next_obs=next_obs,
+                         done=done))
+
+          if done:
+            log_dict(self.logger,
+                     self.envs.exec_remote('info', proc_list=[i])[0],
+                     tag='episode', step=self._cur_frames)
+
+            obs_list[i] = self.envs.reset([i])[0]
+
+        self.store(transition_list)
 
         if self._cur_frames >= self.n_rand_frames \
           and self._cur_frames % self.n_train_interval == 0:
 
-          self.store(self.rollout_env.flush())
-
           train_info = self.train()
-          self._log_dict('train', train_info)
-
-        if self.rollout_env.is_done:
-          self._log_dict('episode', self.rollout_env.info)
-
-          self.store(self.rollout_env.flush())
-
-          self.rollout_env.reset()
+          log_dict(self.logger, train_info, tag='train', step=self._cur_frames)
 
     self.logger.close()
-    self.rollout_env.close()
-
-  def run(self):
-    self._run()
+    self.envs.close()

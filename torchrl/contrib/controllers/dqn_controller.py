@@ -50,13 +50,13 @@ class DQNController(Controller):
     with torch.no_grad():
       obs_tensor = torch.from_numpy(
           np.array(obs)
-      ).float().to(self.device).unsqueeze(0)
+      ).float().to(self.device)
 
       actions = self.q_net(obs_tensor)
 
-    actions = actions.argmax(dim=-1, keepdim=True).cpu().numpy()
+    actions = actions.argmax(dim=-1).cpu().numpy()
     actions = epsilon_greedy(self.action_size, actions, self.eps.value)
-    return actions.item()
+    return [a[0] for a in actions]
 
   def learn(self, obs, action, reward, next_obs, done):
     self.q_net.train()

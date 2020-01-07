@@ -18,10 +18,10 @@ jobs:
 
     - stage: test
       before_script:
-        - pip install .[test]
+        - pip install -e .[test]
       script:
         - pytest
-        - pylint setup.py torchrl experiments
+        - pylint setup.py torchrl examples
 
     - stage: deploy
       before_script:

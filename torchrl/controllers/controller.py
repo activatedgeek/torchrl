@@ -17,5 +17,6 @@ class RandomController(Controller):
   def __init__(self, action_space: gym.Space):
     self.action_space = action_space
 
-  def act(self, *_):
-    return self.action_space.sample()
+  def act(self, obs):
+    return [self.action_space.sample()
+            for _ in range(len(obs))]

@@ -2,12 +2,6 @@ import os
 from setuptools import setup, find_packages
 
 
-with open('requirements.txt', 'r') as f:
-  install_requires = f.readlines()
-
-with open('requirements_extra.txt', 'r') as f:
-  extra_install_requires = f.readlines()
-
 if os.path.isfile('VERSION'):
   with open('VERSION') as f:
     VERSION = f.read()
@@ -37,11 +31,18 @@ setup(name='torchrl',
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
       ],
       packages=find_packages(exclude=[
-          'experiments',
-          'experiments.*'
+          'examples',
+          'examples.*'
       ]),
       python_requires='>=3.6',
-      install_requires=install_requires,
+      install_requires=[
+          'gym',
+          'kondo',
+          'numpy',
+          'torch',
+          'tensorflow',
+          'tqdm',
+      ],
       extras_require={
           'test': [
               'pylint>=2.2',
@@ -53,7 +54,6 @@ setup(name='torchrl',
               'sphinxcontrib-napoleon>=0.7',
               'm2r>=0.2.0',
               'sphinxcontrib-programoutput>=0.11',
-          ],
-          'extra': extra_install_requires,
+          ]
       }
      )

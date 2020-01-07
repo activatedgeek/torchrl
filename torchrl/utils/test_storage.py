@@ -26,6 +26,10 @@ def test_unbounded(n):
     assert v.dim() == len(ref.shape[1:])
     assert v.size(-1) == ref.size(-1)
 
+  ds.truncate()
+
+  assert len(ds) == 0
+
 
 @pytest.mark.parametrize('n,size', [
     (10, 9),
@@ -55,3 +59,7 @@ def test_bounded(n, size):
   for v, ref in zip(ds[random.randint(0, len(ds) - 1)], x):
     assert v.dim() == len(ref.shape[1:])
     assert v.size(-1) == ref.size(-1)
+
+  ds.truncate()
+
+  assert len(ds) == 0

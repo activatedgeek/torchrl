@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import Dataset
-from typing import List
+from typing import List, Optional
 from collections import namedtuple
 
 
@@ -19,10 +19,10 @@ def truncated_cat(a, b, maxsize=-1):
 class TensorTupleDataset(Dataset):
   '''Store vectorized tuples of tensors
   '''
-  def __init__(self, size: int = -1):
+  def __init__(self, size: int = -1, x: Optional[List] = None):
     self.size = size
 
-    self._raw_x = None
+    self._raw_x = x
 
   def extend(self, *tensor_list: List[torch.Tensor]):
     if self._raw_x is None:
@@ -43,6 +43,9 @@ class TensorTupleDataset(Dataset):
 
   def __getitem__(self, index) -> List[torch.Tensor]:
     return [x[index] for x in self._raw_x]
+
+  def truncate(self):
+    self._raw_x = None
 
 
 Transition = namedtuple('Transition', [
