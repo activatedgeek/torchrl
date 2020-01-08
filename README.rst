@@ -14,13 +14,12 @@ TorchRL
     :target: https://github.com/activatedgeek/torchrl
 
 +-----------------------------------------------+---------------------------------------------------------+
-| *Docs*: `<https://torchrl.sanyamkapoor.com>`_ |  *Github*: `<https://github.com/activatedgeek/torchrl>`_  |
+| *Docs*: `<https://torchrl.sanyamkapoor.com>`_ |  *Github*: `<https://github.com/activatedgeek/torchrl>`_|
 +-----------------------------------------------+---------------------------------------------------------+
 
 *TorchRL* provides highly modular and extensible approach to experimenting with
-Reinforcement Learning. It allows for a registry based approach to running
-experiments, allows easy checkpointing, and updating hyper parameter sets.
-All this is accessible via a programmatic interface.
+Reinforcement Learning. All this is accessible via a simple programmatic interface
+with experiment specifications.
 
 Objectives
 -----------

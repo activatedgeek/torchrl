@@ -6,31 +6,16 @@ Subpackages
 
 .. toctree::
 
-    torchrl.agents
-    torchrl.cli
-    torchrl.policies
-    torchrl.problems
-    torchrl.registry
-    torchrl.runners
-    torchrl.storage
-    torchrl.utils
-
-Submodules
-----------
-
-torchrl.models module
----------------------
-
-.. automodule:: torchrl.models
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
+   torchrl.contrib
+   torchrl.controllers
+   torchrl.envs
+   torchrl.experiments
+   torchrl.utils
 
 Module contents
 ---------------
 
 .. automodule:: torchrl
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:

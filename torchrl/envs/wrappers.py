@@ -3,13 +3,7 @@ from torchrl.utils.storage import Transition
 
 
 class TransitionMonitor(gym.Wrapper):
-  '''
-  TransitionMonitor wraps any gym environment and provides
-  standard bookkeeping utilities. All items are kept until
-  the next `reset()` call and can be consumed as necessary.
-   - List of transitions
-   - Episode Return
-   - Episode Length
+  '''Monitor any gym environment
   '''
   def __init__(self, env: gym.Env):
     super().__init__(env)
