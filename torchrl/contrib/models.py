@@ -152,3 +152,35 @@ class ActorCriticNet(nn.Module):
     if isinstance(module, nn.Linear):
       nn.init.normal_(module.weight, mean=0., std=0.1)
       nn.init.constant_(module.bias, 0.1)
+
+
+class ActorNet(nn.Module):
+  def __init__(self, input_size, output_size, hidden_size=256):
+    super().__init__()
+
+    self._input_size = input_size
+    self._output_size = output_size
+    self._hidden_size = hidden_size
+
+    self.base = nn.Sequential(
+        nn.Linear(self._input_size, self._hidden_size),
+        nn.ReLU(),
+        nn.Linear(self._hidden_size, self._hidden_size),
+        nn.ReLU()
+    )
+
+    self.mu = nn.Linear(self._hidden_size, self._output_size)
+    self.log_std = nn.Linear(self._hidden_size, self._output_size)
+
+    def weights_init_(m):
+      if isinstance(m, nn.Linear):
+        torch.nn.init.xavier_uniform_(m.weight, gain=1)
+        torch.nn.init.constant_(m.bias, 0)
+
+    self.apply(weights_init_)
+
+  def forward(self, obs):
+    base = self.base(obs)
+    mu, log_std = self.mu(base), self.log_std(base)
+    log_std = log_std.clamp(min=-20, max=2)
+    return mu, log_std

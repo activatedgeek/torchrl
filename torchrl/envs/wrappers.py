@@ -46,15 +46,17 @@ class TransitionMonitor(gym.Wrapper):
   def step(self, action):
     next_obs, reward, self._ep_done, self._ep_info = self.env.step(action)
 
+    self._ep_return += reward
+    self._ep_len += 1
+
     transition = Transition(
         obs=self.obs,
         action=action,
         reward=reward,
         next_obs=next_obs,
-        done=self._ep_done)
+        done=self._ep_done and self._ep_len < self.env._max_episode_steps
+    )
 
-    self._ep_return += reward
-    self._ep_len += 1
     self._ep_trans.append(transition)
     self._obs = next_obs
 
