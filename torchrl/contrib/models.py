@@ -4,12 +4,12 @@ from torch.distributions import Normal, Categorical
 
 
 class QNet(nn.Module):
-  def __init__(self, input_size, output_size):
+  def __init__(self, input_size, output_size, hidden_size=128):
     super(QNet, self).__init__()
 
     self._input_size = input_size
     self._output_size = output_size
-    self._hidden_size = 128
+    self._hidden_size = hidden_size
 
     self.net = nn.Sequential(
         nn.Linear(self._input_size, self._hidden_size),
