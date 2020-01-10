@@ -108,3 +108,6 @@ model/
 
 # VS Code
 .vscode/
+
+# Mujoco Key
+mjkey.txt
