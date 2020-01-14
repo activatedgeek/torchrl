@@ -8,12 +8,13 @@ from torchrl.contrib.controllers import SACController
 class SACExperiment(BaseExperiment):
   def __init__(self, gamma=.99, tau=0.1, alpha=1e-2, lr=3e-4,
                buffer_size=-1, batch_size=256, n_updates=1,
-               **kwargs):
+               n_update_interval=1, **kwargs):
     self._controller_args = dict(
         gamma=gamma,
         tau=tau,
         alpha=alpha,
-        lr=lr
+        lr=lr,
+        n_update_interval=n_update_interval,
     )
 
     self.buffer = TransitionTupleDataset(size=buffer_size)
@@ -28,6 +29,8 @@ class SACExperiment(BaseExperiment):
   def build_controller(self):
     return SACController(self.envs.observation_space.shape[0],
                          self.envs.action_space.shape[0],
+                         self.envs.action_space.low,
+                         self.envs.action_space.high,
                          **self._controller_args,
                          device=self.device)
 
@@ -43,7 +46,6 @@ class SACExperiment(BaseExperiment):
         train_info = self.controller.learn(*minibatch)
         break
 
-    if self.
     return train_info
 
   @staticmethod
@@ -56,11 +58,12 @@ class SACExperiment(BaseExperiment):
                 env_id=['Pendulum-v0'],
                 n_frames=int(1e5),
                 gamma=0.99,
-                buffer_size=int(1e6),
+                buffer_size=int(5e4),
                 n_train_interval=1,
                 lr=3e-4,
                 tau=5e-3,
                 batch_size=256,
+                alpha=0.2,
                 n_updates=1,
             )
         )

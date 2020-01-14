@@ -5,19 +5,36 @@ from torchrl.controllers import Controller
 from torchrl.contrib.models import QNet, ActorNet
 
 
+def polyak_average_(source, target, tau=1e-3):
+  assert isinstance(source, torch.nn.Module), \
+      '"source" should be of type nn.Module, found "{}"'.format(type(source))
+  assert isinstance(target, torch.nn.Module), \
+      '"target" should be of type nn.Module, found "{}"'.format(type(target))
+
+  for src_param, target_param in zip(source.parameters(), target.parameters()):
+    target_param.data.copy_(tau * src_param.data +
+                            (1.0 - tau) * target_param.data)
+
+
 class SACController(Controller):
-  def __init__(self, obs_size, action_size, gamma=0.99,
-               tau=5e-3, alpha=1e-2, lr=3e-4, device=None):
+  def __init__(self, obs_size, action_size, action_lo,
+               action_hi, gamma=0.99, tau=5e-3, alpha=0.2,
+               lr=3e-4, n_update_interval=1, device=None):
     self.device = device
 
     self.gamma = gamma
     self.tau = tau
+    self.n_update_interval = n_update_interval
 
     self.qnets = torch.nn.ModuleList([
         QNet(obs_size + action_size, 1, hidden_size=256),
         QNet(obs_size + action_size, 1, hidden_size=256)
     ]).to(self.device)
-    self.qnets[1].load_state_dict(self.qnets[0].state_dict())
+    self.target_qnets = torch.nn.ModuleList([
+        QNet(obs_size + action_size, 1, hidden_size=256),
+        QNet(obs_size + action_size, 1, hidden_size=256)
+    ]).to(self.device)
+    self.target_qnets.load_state_dict(self.qnets.state_dict())
 
     self.qnet_optim = torch.optim.Adam(self.qnets.parameters(), lr=lr)
 
@@ -25,8 +42,10 @@ class SACController(Controller):
                           hidden_size=256).to(self.device)
     self.actor_optim = torch.optim.Adam(self.actor.parameters(), lr=lr)
 
-    self.alpha = torch.nn.Parameter(torch.tensor(alpha))
-    self.alpha_optim = torch.optim.Adam([self.alpha], lr=lr)
+    self.log_alpha = torch.nn.Parameter(torch.tensor(alpha).log())
+    self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=lr)
+
+    self._steps = 0
 
   def act(self, obs):
     with torch.no_grad():
@@ -42,17 +61,16 @@ class SACController(Controller):
   def learn(self, obs, action, reward, next_obs, done):
     with torch.no_grad():
       next_mu, next_log_std = self.actor(next_obs)
-      policy = Independent(Normal(next_mu, next_log_std.exp()), 1)
-      next_action = policy.sample()
-
-      q_in = torch.cat([next_obs, next_action], dim=-1)
-      q1, q2 = [qnet(q_in) for qnet in self.qnets]
-
-      next_log_prob = policy.log_prob(next_action) - \
+      next_policy = Independent(Normal(next_mu, next_log_std.exp()), 1)
+      next_action = next_policy.sample()
+      next_log_prob = next_policy.log_prob(next_action) - \
                       (1. - next_action.tanh()**2).log().sum(dim=-1)
 
+      q_in = torch.cat([next_obs, next_action], dim=-1)
+      q1, q2 = [qnet(q_in) for qnet in self.target_qnets]
+
       next_q_values = torch.min(q1, q2) - \
-                      self.alpha * next_log_prob.unsqueeze(-1)
+                      self.log_alpha.exp() * next_log_prob.unsqueeze(-1)
       expected_q_values = reward + \
                           self.gamma * next_q_values * (1.0 - done.float())
 
@@ -71,8 +89,7 @@ class SACController(Controller):
     log_prob = policy.log_prob(action_sample) -\
                (1. - action_sample.tanh()**2).log().sum(dim=-1)
     policy_loss = - (torch.min(*q_values) -\
-                     self.alpha.detach() * log_prob.unsqueeze(-1)).mean(dim=0)
-
+                    self.log_alpha.exp().detach() * log_prob.unsqueeze(-1)).mean(dim=0)
 
     self.qnet_optim.zero_grad()
     (q1_loss + q2_loss).backward()
@@ -82,9 +99,13 @@ class SACController(Controller):
     policy_loss.backward()
     self.actor_optim.step()
 
+    self._steps += 1
+    if self._steps % self.n_update_interval == 0:
+      polyak_average_(self.qnets, self.target_qnets, self.tau)
+
     return dict(
         critic1_loss=q1_loss.detach(),
         critic2_loss=q2_loss.detach(),
         policy_loss=policy_loss.detach(),
-        alpha=self.alpha.detach()
+        alpha=self.log_alpha.exp().detach()
     )
